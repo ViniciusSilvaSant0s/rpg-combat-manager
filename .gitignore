@@ -1,2 +1,4 @@
 instructions.md
 .worktrees/
+server/node_modules/
+server/dist/
