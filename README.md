@@ -6,8 +6,8 @@ Este repositorio contem um sistema full-stack destinado ao gerenciamento de comb
 
 O ambiente de desenvolvimento com Docker Compose sobe dois servicos:
 
-- `front`: aplica o codigo de `rcm-front`, exposta em `http://localhost:5173`
-- `server`: aplica o codigo de `server`, exposta em `http://localhost:3000`
+- `front`: aplica o codigo de `rcm-front`, exposta somente em `127.0.0.1:5173`
+- `server`: aplica o codigo de `server`, exposta somente em `127.0.0.1:3000`
 
 O frontend usa proxy de desenvolvimento para encaminhar requisicoes feitas para
 `/api` ao backend no endereco interno `http://server:3000`, removendo o prefixo.
@@ -32,10 +32,9 @@ Subir em background:
 docker compose up --build -d
 ```
 
-Reconstruir imagens sem reaproveitar cache:
+Reiniciar os servicos depois de alterar `package-lock.json`:
 
 ```bash
-docker compose build --no-cache
 docker compose up -d
 ```
 
@@ -75,6 +74,10 @@ docker compose down -v
 - Os diretorios do projeto sao montados por bind mount para permitir hot reload.
 - Cada servico usa seu proprio volume nomeado para `node_modules`, evitando conflito
   entre dependencias do host e do container.
+- A cada inicializacao de container, o comando de startup executa `npm ci` antes
+  do servidor correspondente. Isso reaplica fielmente as dependencias descritas
+  no `package-lock.json` atual dentro do volume nomeado, sem exigir rebuild da imagem
+  apenas porque o lockfile mudou.
 - O frontend espera a API ficar saudavel antes de iniciar.
 - O Vite e a observacao de arquivos usam polling para funcionar de forma mais
   robusta no Docker Desktop e no Windows.
