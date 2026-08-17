@@ -32,10 +32,10 @@ Subir em background:
 docker compose up --build -d
 ```
 
-Reiniciar os servicos depois de alterar `package-lock.json`:
+Reaplicar alteracoes em `package.json` ou `package-lock.json` nos servicos ja existentes:
 
 ```bash
-docker compose up -d
+docker compose restart
 ```
 
 Ver logs combinados:
@@ -76,8 +76,10 @@ docker compose down -v
   entre dependencias do host e do container.
 - A cada inicializacao de container, o comando de startup executa `npm ci` antes
   do servidor correspondente. Isso reaplica fielmente as dependencias descritas
-  no `package-lock.json` atual dentro do volume nomeado, sem exigir rebuild da imagem
-  apenas porque o lockfile mudou.
+  no `package-lock.json` atual dentro do volume nomeado persistente. Por isso,
+  `docker compose restart` faz os containers iniciarem de novo, dispara `npm ci`
+  e sincroniza as dependencias sem exigir rebuild da imagem apenas porque o
+  lockfile mudou.
 - O frontend espera a API ficar saudavel antes de iniciar.
 - O Vite e a observacao de arquivos usam polling para funcionar de forma mais
   robusta no Docker Desktop e no Windows.
