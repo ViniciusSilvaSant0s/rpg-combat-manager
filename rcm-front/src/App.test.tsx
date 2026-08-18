@@ -2,12 +2,26 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { expect, test } from 'vitest'
 import App from './App'
 
-test('renders the initial counter and increments it', () => {
+test('shows the offline entry point and unavailable account access', () => {
   render(<App />)
 
-  const counter = screen.getByRole('button', { name: 'Count is 0' })
+  expect(
+    screen.getByRole('heading', { name: 'Prepare o combate' }),
+  ).toBeInTheDocument()
+  expect(
+    screen.getByRole('button', { name: 'Continuar offline' }),
+  ).toBeEnabled()
+  expect(
+    screen.getByRole('button', {
+      name: 'Registrar-se ou entrar — em breve',
+    }),
+  ).toBeDisabled()
+})
 
-  fireEvent.click(counter)
+test('opens the empty offline area when continuing without an account', () => {
+  const { getByRole } = render(<App />)
 
-  expect(counter).toHaveTextContent('Count is 1')
+  fireEvent.click(getByRole('button', { name: 'Continuar offline' }))
+
+  expect(getByRole('main', { name: 'Modo offline' })).toBeEmptyDOMElement()
 })
