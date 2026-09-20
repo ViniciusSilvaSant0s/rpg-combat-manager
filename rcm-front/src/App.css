@@ -32,6 +32,148 @@
   margin-top: 24px;
 }
 
+.start-combat-action {
+  background: rgba(93, 67, 39, 0.72);
+  border: 1px solid rgba(211, 173, 103, 0.62);
+  color: #f3dfb4;
+  margin-left: 10px;
+}
+
+.start-combat-action:disabled,
+.undo-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.combat-screen {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(166, 119, 48, 0.2), transparent 42%),
+    linear-gradient(135deg, rgba(22, 15, 10, 0.9), rgba(8, 7, 7, 0.96));
+  min-height: 100svh;
+}
+
+.combat-turn-rail {
+  border-bottom: 1px solid rgba(199, 154, 78, 0.5);
+  padding: 20px 24px;
+}
+
+.combat-turn-rail__cards {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.combat-turn-card {
+  background: rgba(30, 21, 14, 0.78);
+  border: 1px solid;
+  flex: 0 0 180px;
+  min-width: 180px;
+  padding: 12px;
+}
+
+.combat-turn-rail__cards--filled .combat-turn-card {
+  flex-grow: 1;
+}
+
+.combat-turn-card h2,
+.combat-turn-card p,
+.current-combatant-card h2,
+.current-combatant-card p {
+  margin: 0;
+}
+
+.combat-turn-card p + p,
+.current-combatant-card p + p {
+  margin-top: 6px;
+}
+
+.current-combatant-section {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(28px, 5vw, 60px) 24px;
+}
+
+.current-combatant-card {
+  background: rgba(30, 21, 14, 0.86);
+  border: 1px solid;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.3);
+  max-width: 460px;
+  padding: clamp(28px, 5vw, 48px);
+  text-align: center;
+  width: 100%;
+}
+
+.current-combatant-card h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+}
+
+.combat-actions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 18px;
+  max-width: 460px;
+  width: 100%;
+}
+
+.combat-actions button,
+.undo-action,
+.combat-target-list button {
+  background: rgba(93, 67, 39, 0.72);
+  border: 1px solid rgba(211, 173, 103, 0.62);
+  color: #f3dfb4;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-weight: 750;
+  min-height: 44px;
+  padding: 8px 13px;
+}
+
+.undo-action {
+  margin-top: 16px;
+}
+
+.combat-target-list {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.combat-action-dialog form {
+  display: grid;
+  gap: 16px;
+}
+
+.combat-action-dialog {
+  max-height: calc(100svh - 48px);
+  overflow-y: auto;
+}
+
+.combat-action-dialog label {
+  display: grid;
+  gap: 6px;
+}
+
+@media (max-width: 620px) {
+  .combat-turn-rail,
+  .current-combatant-section {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .combat-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .start-combat-action {
+    margin-left: 0;
+    margin-top: 10px;
+  }
+}
+
 .combatant-card {
   background: rgba(30, 21, 14, 0.78);
   border: 1px solid;
