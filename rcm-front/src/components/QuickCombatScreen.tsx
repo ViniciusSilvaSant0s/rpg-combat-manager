@@ -2,12 +2,14 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { loadCombatants, saveCombatants } from '../combatantStorage'
 import type { Combatant, CombatantInput } from '../types/combatant'
 import CombatantFormDialog from './CombatantFormDialog'
+import CombatScreen from './CombatScreen'
 
 function QuickCombatScreen() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [combatants, setCombatants] = useState<Combatant[]>(loadCombatants)
   const [editingCombatant, setEditingCombatant] = useState<Combatant | null>(null)
   const [combatantToRemove, setCombatantToRemove] = useState<Combatant | null>(null)
+  const [isCombatStarted, setIsCombatStarted] = useState(false)
   const removalDialogReference = useRef<HTMLElement>(null)
   const removalTriggerReference = useRef<HTMLElement | null>(null)
 
@@ -101,6 +103,10 @@ function QuickCombatScreen() {
     return second.initiative - first.initiative
   })
 
+  if (isCombatStarted) {
+    return <CombatScreen combatants={combatants} onCombatantsChange={setCombatants} />
+  }
+
   return (
     <main aria-label="Combate rápido" className="quick-combat-screen">
       <section className="quick-combat-panel" aria-labelledby="quick-combat-title">
@@ -112,6 +118,14 @@ function QuickCombatScreen() {
           onClick={() => setIsFormOpen(true)}
         >
           Criar Combatente
+        </button>
+        <button
+          className="start-combat-action"
+          disabled={combatants.length === 0}
+          type="button"
+          onClick={() => setIsCombatStarted(true)}
+        >
+          Iniciar Combate
         </button>
         <div className="combatant-list" aria-label="Combatentes">
           {orderedCombatants.map((combatant) => (
