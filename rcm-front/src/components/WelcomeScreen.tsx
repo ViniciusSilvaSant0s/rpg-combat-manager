@@ -1,3 +1,5 @@
+import PixelCornerFrame from './PixelCornerFrame'
+
 type WelcomeScreenProps = {
   onContinueOffline: () => void
 }
@@ -24,20 +26,20 @@ function WelcomeScreen({ onContinueOffline }: WelcomeScreenProps) {
           Gerencie seus encontros, mesmo sem conexão.
         </p>
         <div className="mx-auto mt-[38px] grid max-w-[360px] gap-3">
-          <button
+          <PixelCornerFrame as="button"
             type="button"
             className="min-h-[52px] cursor-pointer rounded-sm border border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] px-5 py-3 font-[family-name:var(--font-ui)] text-[0.83rem] font-bold tracking-[0.08em] text-[#26180b] uppercase shadow-[inset_0_1px_rgba(255,247,211,0.55),0_5px_16px_rgba(0,0,0,0.26)] hover:from-[#e6bb61] hover:to-[#bd8637] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-4"
             onClick={onContinueOffline}
           >
             Continuar offline
-          </button>
-          <button
+          </PixelCornerFrame>
+          <PixelCornerFrame as="button"
             type="button"
             className="min-h-[52px] cursor-not-allowed rounded-sm border border-[rgba(173,139,82,0.36)] bg-[rgba(74,54,34,0.38)] px-5 py-3 font-[family-name:var(--font-ui)] text-[0.83rem] font-bold tracking-[0.08em] text-[#a8997e] uppercase"
             disabled
           >
             Registrar-se ou entrar — em breve
-          </button>
+          </PixelCornerFrame>
         </div>
       </section>
     </main>
