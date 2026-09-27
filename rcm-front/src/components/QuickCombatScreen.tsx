@@ -108,43 +108,43 @@ function QuickCombatScreen() {
   }
 
   return (
-    <main aria-label="Combate rápido" className="quick-combat-screen">
-      <section className="quick-combat-panel" aria-labelledby="quick-combat-title">
-        <p className="eyebrow">Modo offline</p>
-        <h1 id="quick-combat-title">Combate rápido</h1>
+    <main aria-label="Combate rápido" className="flex min-h-[100svh] justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(166,119,48,0.2),transparent_42%),linear-gradient(135deg,rgba(22,15,10,0.9),rgba(8,7,7,0.96))] px-6 py-12 max-[620px]:px-4">
+      <section className="w-full max-w-[900px]" aria-labelledby="quick-combat-title">
+        <p className="m-0 font-[family-name:var(--font-ui)] text-xs font-bold tracking-[0.2em] text-[#d7af66] uppercase">Modo offline</p>
+        <h1 id="quick-combat-title" className="mt-3 mb-6 font-[family-name:var(--font-display)] text-4xl font-semibold text-[#f5e4ba]">Combate rápido</h1>
         <button
           type="button"
-          className="primary-action"
+          className="min-h-11 cursor-pointer rounded-sm border border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] px-4 py-2 font-[family-name:var(--font-ui)] text-xs font-bold tracking-[0.06em] text-[#26180b] uppercase transition hover:-translate-y-px hover:from-[#e6bb61] hover:to-[#bd8637] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3"
           onClick={() => setIsFormOpen(true)}
         >
           Criar Combatente
         </button>
         <button
-          className="start-combat-action"
+          className="ml-2 min-h-11 cursor-pointer rounded-sm border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-[family-name:var(--font-ui)] text-xs font-bold tracking-[0.06em] text-[#f3dfb4] uppercase transition hover:-translate-y-px hover:bg-[rgba(124,91,51,0.85)] hover:border-[#e4bc6e] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3 disabled:cursor-not-allowed disabled:opacity-55 max-[620px]:ml-0 max-[620px]:mt-2"
           disabled={combatants.length === 0}
           type="button"
           onClick={() => setIsCombatStarted(true)}
         >
           Iniciar Combate
         </button>
-        <div className="combatant-list" aria-label="Combatentes">
+        <div className="mt-6 grid gap-3" aria-label="Combatentes">
           {orderedCombatants.map((combatant) => (
             <article
-              className={`combatant-card combatant-card--${combatant.type}`}
+              className={`combatant-card combatant-card--${combatant.type} border bg-[rgba(30,21,14,0.78)] p-[18px] shadow-[0_10px_22px_rgba(0,0,0,0.2)] ${combatant.type === 'player' ? 'border-[#82bde8] shadow-[0_0_0_1px_rgba(130,189,232,0.18),0_10px_22px_rgba(0,0,0,0.2)]' : 'border-[#d57d68] shadow-[0_0_0_1px_rgba(213,125,104,0.18),0_10px_22px_rgba(0,0,0,0.2)]'}`}
               key={combatant.id}
             >
-              <h2>{combatant.name}</h2>
-              <p>{combatant.type === 'player' ? 'Jogador' : 'NPC'}</p>
-              <p className="combatant-stat hit-points">
+              <h2 className="m-0 font-[family-name:var(--font-display)] text-2xl">{combatant.name}</h2>
+              <p className="mt-1.5 mb-0 text-sm text-[#d6c4a2]">{combatant.type === 'player' ? 'Jogador' : 'NPC'}</p>
+              <p className="mt-1.5 mb-0 font-bold text-[#f08a8a]">
                 ♥ PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}
               </p>
-              <p className="combatant-stat armor-class">🛡 CA: {combatant.armorClass}</p>
-              <p>⚔ Iniciativa: {combatant.initiative ?? '—'}</p>
-              <div className="combatant-actions">
-                <button type="button" onClick={() => setEditingCombatant(combatant)}>
+              <p className="mt-1.5 mb-0 font-bold text-[#94bce9]">🛡 CA: {combatant.armorClass}</p>
+              <p className="mt-1.5 mb-0">⚔ Iniciativa: {combatant.initiative ?? '—'}</p>
+              <div className="mt-3.5 flex gap-2">
+                <button className="min-h-[38px] cursor-pointer rounded-sm border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 text-xs font-bold tracking-[0.06em] text-[#f3dfb4] uppercase transition hover:-translate-y-px hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3" type="button" onClick={() => setEditingCombatant(combatant)}>
                   Editar
                 </button>
-                <button type="button" onClick={() => setCombatantToRemove(combatant)}>
+                <button className="min-h-[38px] cursor-pointer rounded-sm border border-[#e39782] bg-[#8c362d] px-[13px] py-2 text-xs font-bold tracking-[0.06em] text-[#fff4ec] uppercase shadow-[inset_0_1px_rgba(255,235,227,0.35),0_4px_12px_rgba(0,0,0,0.18)] transition hover:-translate-y-px hover:border-[#ffc0ad] hover:bg-[#a9473b] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3" type="button" onClick={() => setCombatantToRemove(combatant)}>
                   Remover
                 </button>
               </div>
@@ -166,22 +166,22 @@ function QuickCombatScreen() {
         />
       ) : null}
       {combatantToRemove ? (
-        <div className="dialog-backdrop">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-6">
           <section
             aria-labelledby="remove-combatant-title"
             aria-modal="true"
-            className="combatant-dialog"
+            className="w-full max-w-[520px] border border-[#c79a4e] bg-[#21170f] p-7 text-[#f5e4ba] shadow-2xl"
             onKeyDown={handleRemovalKeyDown}
             ref={removalDialogReference}
             role="dialog"
           >
-            <h2 id="remove-combatant-title">Remover {combatantToRemove.name}?</h2>
-            <p>Esta ação não pode ser desfeita.</p>
-            <div className="dialog-actions">
-              <button type="button" onClick={() => setCombatantToRemove(null)}>
+            <h2 id="remove-combatant-title" className="mt-0 font-[family-name:var(--font-display)] text-2xl">Remover {combatantToRemove.name}?</h2>
+            <p className="text-[#d6c4a2]">Esta ação não pode ser desfeita.</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 text-sm font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="button" onClick={() => setCombatantToRemove(null)}>
                 Cancelar
               </button>
-              <button className="danger-action" type="button" onClick={removeCombatant}>
+              <button className="min-h-11 cursor-pointer border border-[#e39782] bg-[#8c362d] px-4 py-2 text-sm font-bold text-[#fff4ec] hover:border-[#ffc0ad] hover:bg-[#a9473b] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="button" onClick={removeCombatant}>
                 Remover combatente
               </button>
             </div>

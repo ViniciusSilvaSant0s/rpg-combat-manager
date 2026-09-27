@@ -83,25 +83,25 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
   }
 
   return (
-    <div className="dialog-backdrop">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-6">
       <section
         aria-labelledby="combatant-form-title"
         aria-modal="true"
-        className="combatant-dialog"
+        className="max-h-[calc(100svh-48px)] w-full max-w-[520px] overflow-y-auto border border-[#c79a4e] bg-[#21170f] p-7 text-[#f5e4ba] shadow-2xl"
         onKeyDown={handleKeyDown}
         ref={dialogReference}
         role="dialog"
       >
-        <form onSubmit={handleSubmit}>
-          <h2 id="combatant-form-title">
+        <form className="grid gap-4" onSubmit={handleSubmit}>
+          <h2 id="combatant-form-title" className="mt-0 mb-1 font-[family-name:var(--font-display)] text-2xl">
             {isEditing ? 'Editar Combatente' : 'Criar Combatente'}
           </h2>
-          {error ? <p role="alert">{error}</p> : null}
+          {error ? <p className="m-0 text-[#f08a8a]" role="alert">{error}</p> : null}
 
-          <div aria-label="Tipo" className="combatant-type-toggle" role="radiogroup">
+          <div aria-label="Tipo" className="grid grid-cols-2" role="radiogroup">
             <button
               aria-checked={type === 'player'}
-              className={type === 'player' ? 'is-selected' : undefined}
+              className={`min-h-11 border border-[rgba(211,173,103,0.55)] bg-[rgba(58,42,27,0.8)] px-3 py-2 font-bold text-[#d6c4a2] transition focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-[#f8df9d] ${type === 'player' ? 'rounded-l-sm border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] text-[#26180b]' : 'rounded-l-sm'}`}
               onClick={() => setType('player')}
               role="radio"
               tabIndex={type === 'player' ? 0 : -1}
@@ -111,7 +111,7 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
             </button>
             <button
               aria-checked={type === 'npc'}
-              className={type === 'npc' ? 'is-selected' : undefined}
+              className={`-ml-px min-h-11 border border-[rgba(211,173,103,0.55)] bg-[rgba(58,42,27,0.8)] px-3 py-2 font-bold text-[#d6c4a2] transition focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-[#f8df9d] ${type === 'npc' ? 'rounded-r-sm border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] text-[#26180b]' : 'rounded-r-sm'}`}
               onClick={() => setType('npc')}
               role="radio"
               tabIndex={type === 'npc' ? 0 : -1}
@@ -120,17 +120,18 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
               NPC
             </button>
           </div>
-          <label>
+          <label className="grid gap-1.5 text-sm font-semibold">
             Nome
-            <input defaultValue={combatant?.name} name="name" required type="text" />
+            <input className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 font-normal text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]" defaultValue={combatant?.name} name="name" required type="text" />
           </label>
-          <fieldset className="hit-points-fields">
-            <legend>♥ PV (Pontos de Vida)</legend>
-            <div className="hit-points-inputs">
-              <label className="visually-hidden" htmlFor="current-hit-points">
+          <fieldset className="m-0 min-w-0 border-0 p-0">
+            <legend className="mb-1.5 p-0 font-semibold">♥ PV (Pontos de Vida)</legend>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+              <label className="sr-only" htmlFor="current-hit-points">
                 Vida atual
               </label>
               <input
+                className="min-h-10 w-full border border-[#8a6a38] bg-[#100c09] px-2 text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]"
                 defaultValue={combatant?.currentHitPoints}
                 id="current-hit-points"
                 name="currentHitPoints"
@@ -139,11 +140,12 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
                 step="1"
                 type="number"
               />
-              <span aria-hidden="true">/</span>
-              <label className="visually-hidden" htmlFor="maximum-hit-points">
+              <span className="text-xl font-bold text-[#d7af66]" aria-hidden="true">/</span>
+              <label className="sr-only" htmlFor="maximum-hit-points">
                 Vida máxima
               </label>
               <input
+                className="min-h-10 w-full border border-[#8a6a38] bg-[#100c09] px-2 text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]"
                 defaultValue={combatant?.maximumHitPoints}
                 id="maximum-hit-points"
                 name="maximumHitPoints"
@@ -154,9 +156,10 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
               />
             </div>
           </fieldset>
-          <label>
+          <label className="grid gap-1.5 text-sm font-semibold">
             🛡 CA (Classe de Armadura)
             <input
+              className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 font-normal text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]"
               defaultValue={combatant?.armorClass}
               min="0"
               name="armorClass"
@@ -165,20 +168,21 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
               type="number"
             />
           </label>
-          <label>
+          <label className="grid gap-1.5 text-sm font-semibold">
             ⚔ Iniciativa
             <input
+              className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 font-normal text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]"
               defaultValue={combatant?.initiative ?? ''}
               name="initiative"
               step="1"
               type="number"
             />
           </label>
-          <div className="dialog-actions">
-            <button type="button" onClick={onClose}>
+          <div className="flex flex-wrap justify-end gap-3 pt-2">
+            <button className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="button" onClick={onClose}>
               Cancelar
             </button>
-            <button className="primary-action" type="submit">
+            <button className="min-h-11 cursor-pointer border border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] px-4 py-2 font-bold text-[#26180b] hover:from-[#e6bb61] hover:to-[#bd8637] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="submit">
               {isEditing ? 'Salvar alterações' : 'Salvar combatente'}
             </button>
           </div>
