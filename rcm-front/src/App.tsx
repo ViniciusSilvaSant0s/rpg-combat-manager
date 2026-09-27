@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import './App.css'
 import QuickCombatScreen from './components/QuickCombatScreen'
 import WelcomeScreen from './components/WelcomeScreen'
 
