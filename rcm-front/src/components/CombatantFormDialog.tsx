@@ -6,6 +6,8 @@ import {
   type KeyboardEvent,
 } from 'react'
 import type { Combatant, CombatantInput, CombatantType } from '../types/combatant'
+import CombatIcon from './CombatIcon'
+import PixelCornerFrame from './PixelCornerFrame'
 
 type CombatantFormDialogProps = {
   combatant?: Combatant
@@ -125,7 +127,7 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
             <input className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 font-normal text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]" defaultValue={combatant?.name} name="name" required type="text" />
           </label>
           <fieldset className="m-0 min-w-0 border-0 p-0">
-            <legend className="mb-1.5 p-0 font-semibold">♥ PV (Pontos de Vida)</legend>
+            <legend className="mb-1.5 p-0 font-semibold"><CombatIcon name="heart" />PV (Pontos de Vida)</legend>
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
               <label className="sr-only" htmlFor="current-hit-points">
                 Vida atual
@@ -157,7 +159,7 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
             </div>
           </fieldset>
           <label className="grid gap-1.5 text-sm font-semibold">
-            🛡 CA (Classe de Armadura)
+            <><CombatIcon name="shield" />CA (Classe de Armadura)</>
             <input
               className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 font-normal text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]"
               defaultValue={combatant?.armorClass}
@@ -169,7 +171,7 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
             />
           </label>
           <label className="grid gap-1.5 text-sm font-semibold">
-            ⚔ Iniciativa
+            <><CombatIcon name="thunder" />Iniciativa</>
             <input
               className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 font-normal text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]"
               defaultValue={combatant?.initiative ?? ''}
@@ -179,12 +181,12 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
             />
           </label>
           <div className="flex flex-wrap justify-end gap-3 pt-2">
-            <button className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="button" onClick={onClose}>
+            <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="button" onClick={onClose}>
               Cancelar
-            </button>
-            <button className="min-h-11 cursor-pointer border border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] px-4 py-2 font-bold text-[#26180b] hover:from-[#e6bb61] hover:to-[#bd8637] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="submit">
+            </PixelCornerFrame>
+            <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] px-4 py-2 font-bold text-[#26180b] hover:from-[#e6bb61] hover:to-[#bd8637] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="submit">
               {isEditing ? 'Salvar alterações' : 'Salvar combatente'}
-            </button>
+            </PixelCornerFrame>
           </div>
         </form>
       </section>
