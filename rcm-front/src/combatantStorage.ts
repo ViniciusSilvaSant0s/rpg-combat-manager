@@ -16,7 +16,11 @@ export function loadCombatants(): Combatant[] {
       return []
     }
 
-    return parsedCombatants
+    return parsedCombatants.map((combatant) => ({
+      ...combatant,
+      currentHitPoints: Math.min(combatant.currentHitPoints, combatant.maximumHitPoints),
+      additionalHitPoints: combatant.additionalHitPoints ?? null,
+    }))
   } catch {
     return []
   }
@@ -41,6 +45,9 @@ function isCombatant(value: unknown): value is Combatant {
     && combatant.name.trim().length > 0
     && isInteger(combatant.currentHitPoints)
     && isInteger(combatant.maximumHitPoints)
+    && (combatant.additionalHitPoints === undefined
+      || combatant.additionalHitPoints === null
+      || (isInteger(combatant.additionalHitPoints) && combatant.additionalHitPoints >= 0))
     && isInteger(combatant.armorClass)
     && combatant.armorClass >= 0
     && (combatant.initiative === null || isInteger(combatant.initiative))

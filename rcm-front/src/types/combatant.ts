@@ -6,6 +6,7 @@ export type Combatant = {
   name: string
   currentHitPoints: number
   maximumHitPoints: number
+  additionalHitPoints: number | null
   armorClass: number
   initiative: number | null
 }
