@@ -70,15 +70,18 @@ test('saves additional hit points when provided and null when left empty', () =>
   fireEvent.click(screen.getByRole('button', { name: 'Salvar combatente' }))
 
   expect(JSON.parse(localStorage.getItem('rpg-combat-manager.combatants') ?? '[]')[0].additionalHitPoints).toBe(5)
+  expect(screen.getByText('PV: 18 / 20 - 5')).toBeInTheDocument()
 
   fireEvent.click(screen.getByRole('button', { name: 'Criar Combatente' }))
   fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Goblin' } })
   fireEvent.change(screen.getByLabelText('Vida atual'), { target: { value: '7' } })
   fireEvent.change(screen.getByLabelText('Vida máxima'), { target: { value: '7' } })
+  fireEvent.change(screen.getByLabelText('Vida adicional'), { target: { value: '0' } })
   fireEvent.change(screen.getByLabelText('CA (Classe de Armadura)'), { target: { value: '13' } })
   fireEvent.click(screen.getByRole('button', { name: 'Salvar combatente' }))
 
-  expect(JSON.parse(localStorage.getItem('rpg-combat-manager.combatants') ?? '[]')[1].additionalHitPoints).toBeNull()
+  expect(JSON.parse(localStorage.getItem('rpg-combat-manager.combatants') ?? '[]')[1].additionalHitPoints).toBe(0)
+  expect(screen.getByText('PV: 7 / 7')).toBeInTheDocument()
 })
 
 test('rejects current hit points above maximum when creating or editing a combatant', () => {

@@ -218,7 +218,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
           {upcomingCombatants.map((combatant) => (
             <article className={`relative min-w-[180px] ${upcomingCombatants.length >= 4 ? 'flex-1' : 'flex-[0_0_180px]'} border bg-[rgba(30,21,14,0.78)] p-3 ${combatant.type === 'player' ? 'border-[#82bde8]' : 'border-[#d57d68]'}`} key={combatant.id}>
               <h2 className="m-0 font-[family-name:var(--font-display)] text-lg">{combatant.name}</h2>
-              <p className="mt-1.5 mb-0"><CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}</p>
+              <p className="mt-1.5 mb-0"><CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}{combatant.additionalHitPoints && combatant.additionalHitPoints > 0 ? ` - ${combatant.additionalHitPoints}` : ''}</p>
               <p className="mt-1.5 mb-0"><CombatIcon name="shield" />Defesa: {combatant.armorClass}</p>
               <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {combatant.initiative ?? '—'}</p>
               {hitPointChange?.combatantId === combatant.id ? (
@@ -238,7 +238,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
         >
           <h2 className="m-0 font-[family-name:var(--font-display)] text-[clamp(2rem,5vw,3.2rem)]">{currentCombatant.name}</h2>
           <p className="mt-1.5 mb-0 text-[#d6c4a2]">{currentCombatant.type === 'player' ? 'Jogador' : 'NPC'}</p>
-          <p className="mt-1.5 mb-0 font-bold text-[#f08a8a]"><CombatIcon name="heart" />PV: {currentCombatant.currentHitPoints} / {currentCombatant.maximumHitPoints}</p>
+          <p className="mt-1.5 mb-0 font-bold text-[#f08a8a]"><CombatIcon name="heart" />PV: {currentCombatant.currentHitPoints} / {currentCombatant.maximumHitPoints}{currentCombatant.additionalHitPoints && currentCombatant.additionalHitPoints > 0 ? ` - ${currentCombatant.additionalHitPoints}` : ''}</p>
           <p className="mt-1.5 mb-0 font-bold text-[#94bce9]"><CombatIcon name="shield" />Defesa: {currentCombatant.armorClass}</p>
           <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {currentCombatant.initiative ?? '—'}</p>
           {hitPointChange?.combatantId === currentCombatant.id ? (
@@ -291,7 +291,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
                       onClick={() => setSelectedCombatant(combatant)}
                     >
                       <span className="combat-target-card__name">{combatant.name}</span>
-                      <span className="combat-target-card__stat combat-target-card__stat--health"><CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}</span>
+                      <span className="combat-target-card__stat combat-target-card__stat--health"><CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}{combatant.additionalHitPoints && combatant.additionalHitPoints > 0 ? ` - ${combatant.additionalHitPoints}` : ''}</span>
                       <span className="combat-target-card__stat combat-target-card__stat--armor"><CombatIcon name="shield" />CA: {combatant.armorClass}</span>
                     </PixelCornerFrame>
                   ))}

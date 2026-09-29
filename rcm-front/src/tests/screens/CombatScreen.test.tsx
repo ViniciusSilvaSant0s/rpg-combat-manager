@@ -26,6 +26,23 @@ test('starts with the highest initiative and shows the remaining combatants in o
   expect(screen.getByLabelText('Próximos combatentes')).not.toHaveTextContent('Bruxa')
 })
 
+test('shows positive additional hit points on combat cards and hides null or zero values', () => {
+  const witchWithAdditionalHitPoints = { ...witch, additionalHitPoints: 5 }
+  const ariaWithoutAdditionalHitPoints = { ...aria, additionalHitPoints: 0 }
+  beginCombat([witchWithAdditionalHitPoints, ariaWithoutAdditionalHitPoints])
+
+  expect(screen.getByRole('article', { name: 'Combatente atual: Bruxa' })).toHaveTextContent('PV: 31 / 38 - 5')
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24')
+  expect(screen.getByLabelText('Próximos combatentes')).not.toHaveTextContent('PV: 18 / 24 - 0')
+
+  fireEvent.click(screen.getByRole('button', { name: 'Atacar' }))
+  expect(screen.getByText('Bruxa', { selector: '.combat-target-card__name' }).closest('button'))
+    .toHaveTextContent('PV: 31 / 38 - 5')
+  fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
+  expect(screen.getByText('Aria', { selector: '.combat-target-card__name' }).closest('button'))
+    .toHaveTextContent('PV: 18 / 24')
+})
+
 test('applies damage to a chosen combatant and undoes the last combat action', () => {
   beginCombat([witch, aria])
   fireEvent.click(screen.getByRole('button', { name: 'Atacar' }))
