@@ -52,17 +52,26 @@ regras de negócio de combate implementadas.
 
 ### Frontend: componentes e páginas
 
-O frontend seguirá uma arquitetura orientada a componentes:
+O frontend seguirá uma arquitetura orientada a componentes baseada no modelo
+atômico. Os componentes devem ser tão pequenos e coesos quanto possível, sem
+concentrar lógica de negócio ou regras específicas de uma tela. Devem apresentar
+dados e expor eventos por propriedades e callbacks; a lógica associada a esses
+eventos deve ser aplicada nas páginas. Assim, os mesmos componentes podem ser
+reutilizados em diferentes funcionalidades e contextos.
 
 - **Páginas** compõem a interface de cada tela, administram estado e concentram
   regras e comportamentos específicos daquela tela.
-- **Componentes reutilizáveis** são pequenos, coesos e estritamente de
-  apresentação; recebem dados e callbacks por propriedades.
+- **Componentes reutilizáveis** são unidades pequenas de apresentação, recebem
+  dados e callbacks por propriedades e comunicam interações por eventos.
 - Regras particulares de uma página não devem ser acopladas a componentes
   reutilizáveis.
 
 Ao adicionar uma funcionalidade, a página deve ser o ponto de integração entre
 estado, comportamentos da tela e componentes visuais.
+
+Para cada nova funcionalidade do frontend ou alteração em uma funcionalidade
+existente, deve ser criado ou atualizado ao menos um teste que cubra o
+comportamento implementado ou modificado.
 
 ### Estilização e identidade visual
 
@@ -94,6 +103,10 @@ O fluxo esperado é: a rota encaminha a requisição ao controller, o controller
 delega a regra de negócio a um service, e o service usa repositories e models
 quando necessário. Cada camada deve manter sua responsabilidade, sem pular
 diretamente para preocupações de outra camada.
+
+Para cada nova funcionalidade da API ou alteração em uma funcionalidade
+existente, deve ser criado ou atualizado ao menos um teste que cubra o
+comportamento implementado ou modificado.
 
 ## Convenções para contribuições
 
