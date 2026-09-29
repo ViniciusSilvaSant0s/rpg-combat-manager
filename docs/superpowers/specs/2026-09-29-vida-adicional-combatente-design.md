@@ -15,6 +15,9 @@ existente e continua usando o `localStorage`.
   opcional; vazio é salvo como `null`.
 - Combatentes já persistidos sem a propriedade devem continuar sendo carregados
   com `additionalHitPoints: null`, sem perder os demais dados.
+- Como o formulário atual permite salvar vida atual acima da máxima, a carga de
+  dados antigos deve ajustar esses valores para a vida máxima, preservando os
+  demais dados do combatente.
 - A validação do formulário impede vida atual maior que vida máxima. O limite
   superior também é mantido por ações de combate. Não se altera o limite
   inferior atual da vida, que pode ficar negativa após dano.
