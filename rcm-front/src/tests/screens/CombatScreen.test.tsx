@@ -3,6 +3,14 @@ import { expect, test } from 'vitest'
 import type { Combatant } from '../../types/combatant'
 import { beginCombat } from './helpers'
 
+function openActionForAria(action: 'attack' | 'heal', amount: number) {
+  fireEvent.click(screen.getByRole('button', { name: action === 'attack' ? 'Atacar' : 'Curar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
+  fireEvent.click(screen.getByText('Aria', { selector: '.combat-target-card__name' }).closest('button')!)
+  fireEvent.change(screen.getByLabelText(action === 'attack' ? 'Dano' : 'Cura'), { target: { value: String(amount) } })
+  fireEvent.click(screen.getByRole('button', { name: action === 'attack' ? 'Confirmar dano' : 'Confirmar cura' }))
+}
+
 const witch: Combatant = {
   id: 'witch', type: 'npc', name: 'Bruxa', currentHitPoints: 31,
   maximumHitPoints: 38, additionalHitPoints: null, armorClass: 14, initiative: 20,
@@ -57,15 +65,60 @@ test('applies damage to a chosen combatant and undoes the last combat action', (
   expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24')
 })
 
+test.each([
+  [3, 'PV: 18 / 24 - 2'],
+  [5, 'PV: 18 / 24'],
+  [8, 'PV: 15 / 24'],
+])('damage of %i consumes additional hit points before current hit points', (amount, expectedHitPoints) => {
+  beginCombat([witch, { ...aria, additionalHitPoints: 5 }])
+  openActionForAria('attack', amount)
+
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent(expectedHitPoints)
+  expect(screen.getByRole('status', { name: `Dano de ${amount}` })).toBeInTheDocument()
+})
+
+test('undoing damage restores additional and current hit points', () => {
+  beginCombat([witch, { ...aria, additionalHitPoints: 5 }])
+  openActionForAria('attack', 3)
+
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24 - 2')
+  fireEvent.click(screen.getByRole('button', { name: 'Desfazer última ação' }))
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24 - 5')
+})
+
 test('heals a chosen combatant only up to maximum hit points', () => {
   beginCombat([witch, aria])
   fireEvent.click(screen.getByRole('button', { name: 'Curar' }))
   fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
   fireEvent.click(screen.getByText('Aria', { selector: '.combat-target-card__name' }).closest('button')!)
-  fireEvent.change(screen.getByLabelText('Cura'), { target: { value: '20' } })
+  fireEvent.change(screen.getByLabelText('Cura'), { target: { value: '6' } })
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar cura' }))
 
+  expect(screen.queryByRole('dialog', { name: 'Excedente de cura' })).not.toBeInTheDocument()
   expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 24 / 24')
+})
+
+test('asks to convert healing above maximum into additional hit points and undo restores both values', () => {
+  beginCombat([witch, { ...aria, additionalHitPoints: 4 }])
+  openActionForAria('heal', 20)
+
+  expect(screen.getByRole('dialog', { name: 'Excedente de cura' }))
+    .toHaveTextContent('A cura excede a vida máxima em 14 pontos.')
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24 - 4')
+  fireEvent.click(screen.getByRole('button', { name: 'Sim, adicionar à vida adicional' }))
+
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 24 / 24 - 18')
+  fireEvent.click(screen.getByRole('button', { name: 'Desfazer última ação' }))
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24 - 4')
+})
+
+test('declining excess healing restores only up to maximum and preserves additional hit points', () => {
+  beginCombat([witch, { ...aria, additionalHitPoints: 3 }])
+  openActionForAria('heal', 20)
+
+  fireEvent.click(screen.getByRole('button', { name: 'Não, descartar excedente' }))
+
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 24 / 24 - 3')
 })
 
 test('advances to the next combatant and restores the turn when undoing', () => {

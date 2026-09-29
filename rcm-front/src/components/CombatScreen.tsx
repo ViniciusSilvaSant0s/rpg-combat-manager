@@ -16,6 +16,11 @@ type HitPointChange = {
   amount: number
 }
 
+type PendingHealing = {
+  amount: number
+  excess: number
+}
+
 type CombatScreenProps = {
   combatants: Combatant[]
   onCombatantsChange: (combatants: Combatant[]) => void
@@ -54,6 +59,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
   const [currentCombatantId, setCurrentCombatantId] = useState(orderedCombatants[0]?.id ?? '')
   const [history, setHistory] = useState<CombatHistoryEntry[]>([])
   const [pendingAction, setPendingAction] = useState<CombatAction | null>(null)
+  const [pendingHealing, setPendingHealing] = useState<PendingHealing | null>(null)
   const [selectedCombatant, setSelectedCombatant] = useState<Combatant | null>(null)
   const [amountError, setAmountError] = useState<string | null>(null)
   const [hitPointChange, setHitPointChange] = useState<HitPointChange | null>(null)
@@ -80,7 +86,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
     dialogReference.current?.querySelector<HTMLElement>('button, input')?.focus()
 
     return () => triggerReference.current?.focus()
-  }, [isDialogOpen, selectedCombatant])
+  }, [isDialogOpen, selectedCombatant, pendingHealing])
 
   useEffect(() => {
     if (!hitPointChange) return
@@ -120,6 +126,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
 
   function closeDialog() {
     setPendingAction(null)
+    setPendingHealing(null)
     setSelectedCombatant(null)
     setAmountError(null)
   }
@@ -169,15 +176,51 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
       return
     }
 
+    if (pendingAction === 'heal') {
+      const excess = selectedCombatant.currentHitPoints + amount - selectedCombatant.maximumHitPoints
+
+      if (excess > 0) {
+        setPendingHealing({ amount, excess })
+        return
+      }
+    }
+
+    commitAction(amount, false)
+  }
+
+  function commitAction(amount: number, convertHealingExcess: boolean) {
+    if (!pendingAction || !selectedCombatant) return
+
     rememberCurrentState()
     let amountApplied = 0
     onCombatantsChange(combatants.map((combatant) => {
       if (combatant.id !== selectedCombatant.id) return combatant
-      const currentHitPoints = pendingAction === 'attack'
-        ? combatant.currentHitPoints - amount
-        : Math.min(combatant.currentHitPoints + amount, combatant.maximumHitPoints)
-      amountApplied = currentHitPoints - combatant.currentHitPoints
-      return { ...combatant, currentHitPoints }
+
+      if (pendingAction === 'attack') {
+        const currentAdditionalHitPoints = combatant.additionalHitPoints ?? 0
+        const additionalDamage = Math.min(currentAdditionalHitPoints, amount)
+        const additionalHitPoints = currentAdditionalHitPoints - additionalDamage
+        const damageToCurrentHitPoints = amount - additionalDamage
+        amountApplied = -amount
+
+        return {
+          ...combatant,
+          currentHitPoints: combatant.currentHitPoints - damageToCurrentHitPoints,
+          additionalHitPoints: additionalHitPoints > 0 ? additionalHitPoints : null,
+        }
+      }
+
+      const currentHitPoints = Math.min(
+        combatant.currentHitPoints + amount,
+        combatant.maximumHitPoints,
+      )
+      const restoredHitPoints = currentHitPoints - combatant.currentHitPoints
+      const additionalHitPoints = convertHealingExcess && pendingHealing
+        ? (combatant.additionalHitPoints ?? 0) + pendingHealing.excess
+        : combatant.additionalHitPoints
+      amountApplied = restoredHitPoints + (convertHealingExcess && pendingHealing ? pendingHealing.excess : 0)
+
+      return { ...combatant, currentHitPoints, additionalHitPoints }
     }))
     setHitPointChange({
       id: crypto.randomUUID(),
@@ -266,18 +309,29 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
             role="dialog"
           >
             {selectedCombatant ? (
-              <form className="grid gap-4" onSubmit={applyAction}>
-                <h2 id="combat-action-title" className="mt-0 font-[family-name:var(--font-display)] text-2xl">Aplicar {pendingAction === 'attack' ? 'dano' : 'cura'} em {selectedCombatant.name}</h2>
-                {amountError ? <p className="text-[#f08a8a]" role="alert">{amountError}</p> : null}
-                <label className="grid gap-1.5">
-                  {amountLabel}
-                  <input className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]" min="1" name="amount" required step="1" type="number" />
-                </label>
-                <div className="flex justify-end gap-3">
-                  <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="button" onClick={() => setSelectedCombatant(null)}>Voltar</PixelCornerFrame>
-                  <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] px-4 py-2 font-bold text-[#26180b] hover:from-[#e6bb61] hover:to-[#bd8637] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="submit">Confirmar {pendingAction === 'attack' ? 'dano' : 'cura'}</PixelCornerFrame>
+              pendingHealing ? (
+                <div className="grid gap-4">
+                  <h2 id="combat-action-title" className="mt-0 font-[family-name:var(--font-display)] text-2xl">Excedente de cura</h2>
+                  <p className="m-0">A cura excede a vida máxima em {pendingHealing.excess} {pendingHealing.excess === 1 ? 'ponto' : 'pontos'}. Deseja adicionar esse excedente à vida adicional de {selectedCombatant.name}?</p>
+                  <div className="flex flex-wrap justify-end gap-3">
+                    <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="button" onClick={() => commitAction(pendingHealing.amount, false)}>Não, descartar excedente</PixelCornerFrame>
+                    <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] px-4 py-2 font-bold text-[#26180b] hover:from-[#e6bb61] hover:to-[#bd8637] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="button" onClick={() => commitAction(pendingHealing.amount, true)}>Sim, adicionar à vida adicional</PixelCornerFrame>
+                  </div>
                 </div>
-              </form>
+              ) : (
+                <form className="grid gap-4" onSubmit={applyAction}>
+                  <h2 id="combat-action-title" className="mt-0 font-[family-name:var(--font-display)] text-2xl">Aplicar {pendingAction === 'attack' ? 'dano' : 'cura'} em {selectedCombatant.name}</h2>
+                  {amountError ? <p className="text-[#f08a8a]" role="alert">{amountError}</p> : null}
+                  <label className="grid gap-1.5">
+                    {amountLabel}
+                    <input className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]" min="1" name="amount" required step="1" type="number" />
+                  </label>
+                  <div className="flex justify-end gap-3">
+                    <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="button" onClick={() => setSelectedCombatant(null)}>Voltar</PixelCornerFrame>
+                    <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] px-4 py-2 font-bold text-[#26180b] hover:from-[#e6bb61] hover:to-[#bd8637] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="submit">Confirmar {pendingAction === 'attack' ? 'dano' : 'cura'}</PixelCornerFrame>
+                  </div>
+                </form>
+              )
             ) : (
               <>
                 <h2 id="combat-action-title" className="mt-0 font-[family-name:var(--font-display)] text-2xl">Escolher alvo para {actionLabel}</h2>
