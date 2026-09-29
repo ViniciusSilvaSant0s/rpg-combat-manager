@@ -37,17 +37,36 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
     const formData = new FormData(event.currentTarget)
     const name = String(formData.get('name') ?? '').trim()
     const initiativeValue = String(formData.get('initiative') ?? '').trim()
+    const currentHitPoints = Number(formData.get('currentHitPoints'))
+    const maximumHitPoints = Number(formData.get('maximumHitPoints'))
+    const additionalHitPointsValue = String(formData.get('additionalHitPoints') ?? '').trim()
 
     if (!name) {
       setError('Informe um nome.')
       return
     }
 
+    if (currentHitPoints > maximumHitPoints) {
+      setError('A vida atual não pode ser maior que a vida máxima.')
+      return
+    }
+
+    const additionalHitPoints = additionalHitPointsValue === ''
+      ? null
+      : Number(additionalHitPointsValue)
+
+    if (additionalHitPoints !== null
+      && (!Number.isInteger(additionalHitPoints) || additionalHitPoints < 0)) {
+      setError('A vida adicional deve ser um inteiro igual ou maior que zero.')
+      return
+    }
+
     onSave({
       type,
       name,
-      currentHitPoints: Number(formData.get('currentHitPoints')),
-      maximumHitPoints: Number(formData.get('maximumHitPoints')),
+      currentHitPoints,
+      maximumHitPoints,
+      additionalHitPoints,
       armorClass: Number(formData.get('armorClass')),
       initiative: initiativeValue === '' ? null : Number(initiativeValue),
     })
@@ -128,7 +147,7 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
           </label>
           <fieldset className="m-0 min-w-0 border-0 p-0">
             <legend className="mb-1.5 p-0 font-semibold"><CombatIcon name="heart" />PV (Pontos de Vida)</legend>
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
               <label className="sr-only" htmlFor="current-hit-points">
                 Vida atual
               </label>
@@ -153,6 +172,20 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
                 name="maximumHitPoints"
                 placeholder="vida máxima"
                 required
+                step="1"
+                type="number"
+              />
+              <span className="text-xl font-bold text-[#d7af66]" aria-hidden="true">-</span>
+              <label className="sr-only" htmlFor="additional-hit-points">
+                Vida adicional
+              </label>
+              <input
+                className="min-h-10 w-full border border-[#8a6a38] bg-[#100c09] px-2 text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]"
+                defaultValue={combatant?.additionalHitPoints ?? ''}
+                id="additional-hit-points"
+                min="0"
+                name="additionalHitPoints"
+                placeholder="vida adicional"
                 step="1"
                 type="number"
               />

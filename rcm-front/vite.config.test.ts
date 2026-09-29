@@ -10,6 +10,10 @@ describe('vite development server config', () => {
     const apiProxy = config.server?.proxy?.['/api']
 
     expect(apiProxy).toBeDefined()
+    if (!apiProxy || typeof apiProxy === 'string') {
+      throw new Error('Expected /api to use proxy options')
+    }
+
     expect(apiProxy?.target).toBe('http://server:3000')
     expect(apiProxy?.changeOrigin).toBe(true)
     expect(apiProxy?.rewrite?.('/api/health')).toBe('/health')

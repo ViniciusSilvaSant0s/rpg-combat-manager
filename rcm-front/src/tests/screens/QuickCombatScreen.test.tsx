@@ -21,6 +21,7 @@ test('opens a form with all combatant fields', () => {
   expect(screen.getByRole('group', { name: 'PV (Pontos de Vida)' })).toBeInTheDocument()
   expect(screen.getByLabelText('Vida atual')).toHaveAttribute('placeholder', 'vida atual')
   expect(screen.getByLabelText('Vida máxima')).toHaveAttribute('placeholder', 'vida máxima')
+  expect(screen.getByLabelText('Vida adicional')).toHaveAttribute('placeholder', 'vida adicional')
   expect(screen.getByLabelText('CA (Classe de Armadura)')).toBeInTheDocument()
   expect(screen.getByLabelText('Iniciativa')).toBeInTheDocument()
 })
@@ -58,6 +59,53 @@ test('creates a player combatant with its combat attributes', () => {
   expect(screen.getByRole('button', { name: 'Remover' })).toBeInTheDocument()
 })
 
+test('saves additional hit points when provided and null when left empty', () => {
+  enterQuickCombat()
+  fireEvent.click(screen.getByRole('button', { name: 'Criar Combatente' }))
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Aria' } })
+  fireEvent.change(screen.getByLabelText('Vida atual'), { target: { value: '18' } })
+  fireEvent.change(screen.getByLabelText('Vida máxima'), { target: { value: '20' } })
+  fireEvent.change(screen.getByLabelText('Vida adicional'), { target: { value: '5' } })
+  fireEvent.change(screen.getByLabelText('CA (Classe de Armadura)'), { target: { value: '16' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar combatente' }))
+
+  expect(JSON.parse(localStorage.getItem('rpg-combat-manager.combatants') ?? '[]')[0].additionalHitPoints).toBe(5)
+  expect(screen.getByText('PV: 18 / 20 - 5')).toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole('button', { name: 'Criar Combatente' }))
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Goblin' } })
+  fireEvent.change(screen.getByLabelText('Vida atual'), { target: { value: '7' } })
+  fireEvent.change(screen.getByLabelText('Vida máxima'), { target: { value: '7' } })
+  fireEvent.change(screen.getByLabelText('Vida adicional'), { target: { value: '0' } })
+  fireEvent.change(screen.getByLabelText('CA (Classe de Armadura)'), { target: { value: '13' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar combatente' }))
+
+  expect(JSON.parse(localStorage.getItem('rpg-combat-manager.combatants') ?? '[]')[1].additionalHitPoints).toBe(0)
+  expect(screen.getByText('PV: 7 / 7')).toBeInTheDocument()
+})
+
+test('rejects current hit points above maximum when creating or editing a combatant', () => {
+  enterQuickCombat()
+  fireEvent.click(screen.getByRole('button', { name: 'Criar Combatente' }))
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Aria' } })
+  fireEvent.change(screen.getByLabelText('Vida atual'), { target: { value: '21' } })
+  fireEvent.change(screen.getByLabelText('Vida máxima'), { target: { value: '20' } })
+  fireEvent.change(screen.getByLabelText('CA (Classe de Armadura)'), { target: { value: '16' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar combatente' }))
+
+  expect(screen.getByText('A vida atual não pode ser maior que a vida máxima.')).toBeInTheDocument()
+  expect(screen.getByRole('dialog', { name: 'Criar Combatente' })).toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Vida atual'), { target: { value: '18' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar combatente' }))
+
+  fireEvent.click(within(screen.getByRole('article')).getByRole('button', { name: 'Editar' }))
+  fireEvent.change(screen.getByLabelText('Vida atual'), { target: { value: '21' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+
+  expect(screen.getByText('A vida atual não pode ser maior que a vida máxima.')).toBeInTheDocument()
+  expect(screen.getByRole('dialog', { name: 'Editar Combatente' })).toBeInTheDocument()
+})
+
 test('orders combatants by initiative and keeps a missing initiative at the end', () => {
   enterQuickCombat()
   fireEvent.click(screen.getByRole('button', { name: 'Criar Combatente' }))
@@ -70,7 +118,7 @@ test('orders combatants by initiative and keeps a missing initiative at the end'
 
   fireEvent.click(screen.getByRole('button', { name: 'Criar Combatente' }))
   fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Aria' } })
-  fireEvent.change(screen.getByLabelText('Vida atual'), { target: { value: '25' } })
+  fireEvent.change(screen.getByLabelText('Vida atual'), { target: { value: '20' } })
   fireEvent.change(screen.getByLabelText('Vida máxima'), { target: { value: '20' } })
   fireEvent.change(screen.getByLabelText('CA (Classe de Armadura)'), { target: { value: '16' } })
   fireEvent.change(screen.getByLabelText('Iniciativa'), { target: { value: '14' } })

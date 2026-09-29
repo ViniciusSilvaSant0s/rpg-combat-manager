@@ -139,6 +139,9 @@ function QuickCombatScreen() {
               <p className="mt-1.5 mb-0 text-sm text-[#d6c4a2]">{combatant.type === 'player' ? 'Jogador' : 'NPC'}</p>
               <p className="mt-1.5 mb-0 font-bold text-[#f08a8a]">
                 <CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}
+                {combatant.additionalHitPoints && combatant.additionalHitPoints > 0
+                  ? ` - ${combatant.additionalHitPoints}`
+                  : ''}
               </p>
               <p className="mt-1.5 mb-0 font-bold text-[#94bce9]"><CombatIcon name="shield" />CA: {combatant.armorClass}</p>
               <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {combatant.initiative ?? '—'}</p>

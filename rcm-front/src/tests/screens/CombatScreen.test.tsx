@@ -3,20 +3,28 @@ import { expect, test } from 'vitest'
 import type { Combatant } from '../../types/combatant'
 import { beginCombat } from './helpers'
 
+function openActionForAria(action: 'attack' | 'heal', amount: number) {
+  fireEvent.click(screen.getByRole('button', { name: action === 'attack' ? 'Atacar' : 'Curar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
+  fireEvent.click(screen.getByText('Aria', { selector: '.combat-target-card__name' }).closest('button')!)
+  fireEvent.change(screen.getByLabelText(action === 'attack' ? 'Dano' : 'Cura'), { target: { value: String(amount) } })
+  fireEvent.click(screen.getByRole('button', { name: action === 'attack' ? 'Confirmar dano' : 'Confirmar cura' }))
+}
+
 const witch: Combatant = {
   id: 'witch', type: 'npc', name: 'Bruxa', currentHitPoints: 31,
-  maximumHitPoints: 38, armorClass: 14, initiative: 20,
+  maximumHitPoints: 38, additionalHitPoints: null, armorClass: 14, initiative: 20,
 }
 const aria: Combatant = {
   id: 'aria', type: 'player', name: 'Aria', currentHitPoints: 18,
-  maximumHitPoints: 24, armorClass: 15, initiative: 18,
+  maximumHitPoints: 24, additionalHitPoints: null, armorClass: 15, initiative: 18,
 }
 
 test('starts with the highest initiative and shows the remaining combatants in order', () => {
   beginCombat([
     witch,
     aria,
-    { id: 'goblin', type: 'npc', name: 'Goblin', currentHitPoints: 7, maximumHitPoints: 7, armorClass: 13, initiative: 14 },
+    { id: 'goblin', type: 'npc', name: 'Goblin', currentHitPoints: 7, maximumHitPoints: 7, additionalHitPoints: null, armorClass: 13, initiative: 14 },
   ])
 
   expect(screen.getByRole('heading', { name: 'Combate em andamento' })).toBeInTheDocument()
@@ -24,6 +32,23 @@ test('starts with the highest initiative and shows the remaining combatants in o
   expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('Aria')
   expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('Goblin')
   expect(screen.getByLabelText('Próximos combatentes')).not.toHaveTextContent('Bruxa')
+})
+
+test('shows positive additional hit points on combat cards and hides null or zero values', () => {
+  const witchWithAdditionalHitPoints = { ...witch, additionalHitPoints: 5 }
+  const ariaWithoutAdditionalHitPoints = { ...aria, additionalHitPoints: 0 }
+  beginCombat([witchWithAdditionalHitPoints, ariaWithoutAdditionalHitPoints])
+
+  expect(screen.getByRole('article', { name: 'Combatente atual: Bruxa' })).toHaveTextContent('PV: 31 / 38 - 5')
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24')
+  expect(screen.getByLabelText('Próximos combatentes')).not.toHaveTextContent('PV: 18 / 24 - 0')
+
+  fireEvent.click(screen.getByRole('button', { name: 'Atacar' }))
+  expect(screen.getByText('Bruxa', { selector: '.combat-target-card__name' }).closest('button'))
+    .toHaveTextContent('PV: 31 / 38 - 5')
+  fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
+  expect(screen.getByText('Aria', { selector: '.combat-target-card__name' }).closest('button'))
+    .toHaveTextContent('PV: 18 / 24')
 })
 
 test('applies damage to a chosen combatant and undoes the last combat action', () => {
@@ -40,15 +65,60 @@ test('applies damage to a chosen combatant and undoes the last combat action', (
   expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24')
 })
 
+test.each([
+  [3, 'PV: 18 / 24 - 2'],
+  [5, 'PV: 18 / 24'],
+  [8, 'PV: 15 / 24'],
+])('damage of %i consumes additional hit points before current hit points', (amount, expectedHitPoints) => {
+  beginCombat([witch, { ...aria, additionalHitPoints: 5 }])
+  openActionForAria('attack', amount)
+
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent(expectedHitPoints)
+  expect(screen.getByRole('status', { name: `Dano de ${amount}` })).toBeInTheDocument()
+})
+
+test('undoing damage restores additional and current hit points', () => {
+  beginCombat([witch, { ...aria, additionalHitPoints: 5 }])
+  openActionForAria('attack', 3)
+
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24 - 2')
+  fireEvent.click(screen.getByRole('button', { name: 'Desfazer última ação' }))
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24 - 5')
+})
+
 test('heals a chosen combatant only up to maximum hit points', () => {
   beginCombat([witch, aria])
   fireEvent.click(screen.getByRole('button', { name: 'Curar' }))
   fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
   fireEvent.click(screen.getByText('Aria', { selector: '.combat-target-card__name' }).closest('button')!)
-  fireEvent.change(screen.getByLabelText('Cura'), { target: { value: '20' } })
+  fireEvent.change(screen.getByLabelText('Cura'), { target: { value: '6' } })
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar cura' }))
 
+  expect(screen.queryByRole('dialog', { name: 'Excedente de cura' })).not.toBeInTheDocument()
   expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 24 / 24')
+})
+
+test('asks to convert healing above maximum into additional hit points and undo restores both values', () => {
+  beginCombat([witch, { ...aria, additionalHitPoints: 4 }])
+  openActionForAria('heal', 20)
+
+  expect(screen.getByRole('dialog', { name: 'Excedente de cura' }))
+    .toHaveTextContent('A cura excede a vida máxima em 14 pontos.')
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24 - 4')
+  fireEvent.click(screen.getByRole('button', { name: 'Sim, adicionar à vida adicional' }))
+
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 24 / 24 - 18')
+  fireEvent.click(screen.getByRole('button', { name: 'Desfazer última ação' }))
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 18 / 24 - 4')
+})
+
+test('declining excess healing restores only up to maximum and preserves additional hit points', () => {
+  beginCombat([witch, { ...aria, additionalHitPoints: 3 }])
+  openActionForAria('heal', 20)
+
+  fireEvent.click(screen.getByRole('button', { name: 'Não, descartar excedente' }))
+
+  expect(screen.getByLabelText('Próximos combatentes')).toHaveTextContent('PV: 24 / 24 - 3')
 })
 
 test('advances to the next combatant and restores the turn when undoing', () => {
@@ -64,8 +134,8 @@ test('keeps registration order on initiative ties, puts missing initiatives last
   beginCombat([
     witch,
     aria,
-    { id: 'kael', type: 'player', name: 'Kael', currentHitPoints: 22, maximumHitPoints: 22, armorClass: 16, initiative: 18 },
-    { id: 'goblin', type: 'npc', name: 'Goblin', currentHitPoints: 7, maximumHitPoints: 7, armorClass: 13, initiative: null },
+    { id: 'kael', type: 'player', name: 'Kael', currentHitPoints: 22, maximumHitPoints: 22, additionalHitPoints: null, armorClass: 16, initiative: 18 },
+    { id: 'goblin', type: 'npc', name: 'Goblin', currentHitPoints: 7, maximumHitPoints: 7, additionalHitPoints: null, armorClass: 13, initiative: null },
   ])
 
   expect(within(screen.getByLabelText('Próximos combatentes')).getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
