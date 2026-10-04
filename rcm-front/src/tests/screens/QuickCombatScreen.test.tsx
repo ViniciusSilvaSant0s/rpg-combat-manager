@@ -2,6 +2,64 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { expect, test } from 'vitest'
 import { enterQuickCombat } from './helpers'
 
+test('selects a character, persists it and restores it when editing', () => {
+  enterQuickCombat()
+  fireEvent.click(screen.getByRole('button', { name: 'Criar Combatente' }))
+  expect(screen.queryByRole('img', { name: 'Personagem 1' })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Escolher personagem' }))
+  const picker = screen.getByRole('dialog', { name: 'Escolher personagem' })
+  fireEvent.keyDown(picker, { key: 'Tab', shiftKey: true })
+  expect(within(picker).getByRole('button', { name: 'Cancelar' })).toHaveFocus()
+  fireEvent.keyDown(picker, { key: 'Tab' })
+  expect(within(picker).getByRole('button', { name: 'Personagem 1' })).toHaveFocus()
+  expect(within(picker).getAllByRole('img')).toHaveLength(9)
+  expect(within(picker).getAllByRole('img').map((image) => image.getAttribute('aria-label'))).toEqual([
+    'Personagem 1', 'Personagem 2', 'Personagem 3', 'Personagem 4', 'Personagem 5',
+    'Personagem 7', 'Personagem 8', 'Personagem 9', 'Personagem 10',
+  ])
+  fireEvent.click(within(picker).getByRole('button', { name: 'Personagem 1' }))
+  expect(screen.queryByRole('dialog', { name: 'Escolher personagem' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Mudar personagem' })).toHaveFocus()
+  expect(screen.getByRole('img', { name: 'Personagem 1' })).toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Aria' } })
+  fireEvent.change(screen.getByLabelText('Vida atual'), { target: { value: '18' } })
+  fireEvent.change(screen.getByLabelText('Vida máxima'), { target: { value: '20' } })
+  fireEvent.change(screen.getByLabelText('CA (Classe de Armadura)'), { target: { value: '16' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar combatente' }))
+
+  const card = screen.getByRole('article')
+  expect(card.lastElementChild).toContainElement(within(card).getByRole('img', { name: 'Personagem de Aria' }))
+  expect(JSON.parse(localStorage.getItem('rpg-combat-manager.combatants') ?? '[]')[0].characterId).toBe('character-1')
+  fireEvent.click(within(card).getByRole('button', { name: 'Editar' }))
+  expect(screen.getByRole('img', { name: 'Personagem 1' })).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Iniciar Combate' }))
+  const currentCard = screen.getByRole('article', { name: 'Combatente atual: Aria' })
+  expect(currentCard.firstElementChild).toContainElement(within(currentCard).getByRole('img', { name: 'Personagem de Aria' }))
+})
+
+test('changes characters and cancels the picker without losing form data or selection', () => {
+  enterQuickCombat()
+  fireEvent.click(screen.getByRole('button', { name: 'Criar Combatente' }))
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Medusa' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Escolher personagem' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Personagem 10' }))
+  expect(screen.getByRole('img', { name: 'Personagem 10' })).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Mudar personagem' }))
+  const picker = screen.getByRole('dialog', { name: 'Escolher personagem' })
+  expect(within(picker).getByRole('button', { name: 'Personagem 10' })).toHaveFocus()
+  fireEvent.keyDown(picker, { key: 'Escape' })
+  expect(screen.getByLabelText('Nome')).toHaveValue('Medusa')
+  expect(screen.getByRole('img', { name: 'Personagem 10' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Mudar personagem' })).toHaveFocus()
+  fireEvent.click(screen.getByRole('button', { name: 'Mudar personagem' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Personagem 2' }))
+  expect(screen.getByRole('img', { name: 'Personagem 2' })).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Mudar personagem' }))
+  fireEvent.click(within(screen.getByRole('dialog', { name: 'Escolher personagem' })).getByRole('button', { name: 'Cancelar' }))
+  expect(screen.getByRole('img', { name: 'Personagem 2' })).toBeInTheDocument()
+})
+
 test('shows combatant creation and disables combat until one exists', () => {
   enterQuickCombat()
 

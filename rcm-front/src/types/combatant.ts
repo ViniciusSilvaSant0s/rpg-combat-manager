@@ -4,6 +4,7 @@ export type Combatant = {
   id: string
   type: CombatantType
   name: string
+  characterId?: string | null
   currentHitPoints: number
   maximumHitPoints: number
   additionalHitPoints: number | null

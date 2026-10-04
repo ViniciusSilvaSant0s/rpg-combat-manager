@@ -139,6 +139,11 @@ body {
   text-align: left;
 }
 
+.combat-target-grid--characters {
+  --combatant-target-card-height: 252px;
+  overflow-y: auto;
+}
+
 .combat-target-card__name {
   display: -webkit-box;
   overflow: hidden;

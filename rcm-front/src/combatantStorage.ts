@@ -1,4 +1,5 @@
 import type { Combatant } from './types/combatant'
+import { findCharacter } from './characters'
 
 const storageKey = 'rpg-combat-manager.combatants'
 
@@ -20,6 +21,7 @@ export function loadCombatants(): Combatant[] {
       ...combatant,
       currentHitPoints: Math.min(combatant.currentHitPoints, combatant.maximumHitPoints),
       additionalHitPoints: combatant.additionalHitPoints ?? null,
+      characterId: findCharacter(combatant.characterId)?.id ?? null,
     }))
   } catch {
     return []

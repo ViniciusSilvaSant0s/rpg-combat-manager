@@ -8,6 +8,7 @@ const combatant: Combatant = {
   id: 'aria',
   type: 'player',
   name: 'Aria',
+  characterId: null,
   currentHitPoints: 18,
   maximumHitPoints: 24,
   additionalHitPoints: null,
@@ -22,6 +23,15 @@ describe('combatant storage', () => {
 
   test('returns an empty list when no combatants have been saved', () => {
     expect(loadCombatants()).toEqual([])
+  })
+
+  test('normalizes missing and unknown characters without losing saved combatants', () => {
+    localStorage.setItem(storageKey, JSON.stringify([
+      { ...combatant, characterId: undefined },
+      { ...combatant, id: 'unknown', characterId: 'unavailable-character' },
+      { ...combatant, id: 'selected', characterId: 'character-1' },
+    ]))
+    expect(loadCombatants().map((entry) => entry.characterId)).toEqual([null, null, 'character-1'])
   })
 
   test('loads saved combatants', () => {

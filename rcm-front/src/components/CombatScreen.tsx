@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type Keyb
 import type { Combatant } from '../types/combatant'
 import CombatIcon from './CombatIcon'
 import PixelCornerFrame from './PixelCornerFrame'
+import CharacterSprite from './CharacterSprite'
 
 type CombatAction = 'attack' | 'heal'
 
@@ -260,6 +261,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
         >
           {upcomingCombatants.map((combatant) => (
             <article className={`relative min-w-[180px] ${upcomingCombatants.length >= 4 ? 'flex-1' : 'flex-[0_0_180px]'} border bg-[rgba(30,21,14,0.78)] p-3 ${combatant.type === 'player' ? 'border-[#82bde8]' : 'border-[#d57d68]'}`} key={combatant.id}>
+              <CharacterSprite characterId={combatant.characterId} label={`Personagem de ${combatant.name}`} className="mx-auto mb-2" />
               <h2 className="m-0 font-[family-name:var(--font-display)] text-lg">{combatant.name}</h2>
               <p className="mt-1.5 mb-0"><CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}{combatant.additionalHitPoints && combatant.additionalHitPoints > 0 ? ` - ${combatant.additionalHitPoints}` : ''}</p>
               <p className="mt-1.5 mb-0"><CombatIcon name="shield" />Defesa: {combatant.armorClass}</p>
@@ -279,6 +281,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
           aria-label={`Combatente atual: ${currentCombatant.name}`}
           className={`relative w-full max-w-[460px] border bg-[rgba(30,21,14,0.86)] p-[clamp(28px,5vw,48px)] text-center shadow-[0_16px_38px_rgba(0,0,0,0.3)] ${currentCombatant.type === 'player' ? 'border-[#82bde8]' : 'border-[#d57d68]'}`}
         >
+          <CharacterSprite characterId={currentCombatant.characterId} label={`Personagem de ${currentCombatant.name}`} className="mx-auto mb-2" />
           <h2 className="m-0 font-[family-name:var(--font-display)] text-[clamp(2rem,5vw,3.2rem)]">{currentCombatant.name}</h2>
           <p className="mt-1.5 mb-0 text-[#d6c4a2]">{currentCombatant.type === 'player' ? 'Jogador' : 'NPC'}</p>
           <p className="mt-1.5 mb-0 font-bold text-[#f08a8a]"><CombatIcon name="heart" />PV: {currentCombatant.currentHitPoints} / {currentCombatant.maximumHitPoints}{currentCombatant.additionalHitPoints && currentCombatant.additionalHitPoints > 0 ? ` - ${currentCombatant.additionalHitPoints}` : ''}</p>
@@ -335,7 +338,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
             ) : (
               <>
                 <h2 id="combat-action-title" className="mt-0 font-[family-name:var(--font-display)] text-2xl">Escolher alvo para {actionLabel}</h2>
-                <div className="combat-target-grid" ref={targetGridReference}>
+                <div className={`combat-target-grid ${orderedCombatants.some((combatant) => combatant.characterId) ? 'combat-target-grid--characters' : ''}`} ref={targetGridReference}>
                   {pageCombatants.map((combatant) => (
                     <PixelCornerFrame
                       as="button"
@@ -344,6 +347,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
                       type="button"
                       onClick={() => setSelectedCombatant(combatant)}
                     >
+                      <CharacterSprite characterId={combatant.characterId} label={`Personagem de ${combatant.name}`} className="mx-auto" />
                       <span className="combat-target-card__name">{combatant.name}</span>
                       <span className="combat-target-card__stat combat-target-card__stat--health"><CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}{combatant.additionalHitPoints && combatant.additionalHitPoints > 0 ? ` - ${combatant.additionalHitPoints}` : ''}</span>
                       <span className="combat-target-card__stat combat-target-card__stat--armor"><CombatIcon name="shield" />CA: {combatant.armorClass}</span>

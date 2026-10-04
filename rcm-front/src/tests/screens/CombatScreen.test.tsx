@@ -20,6 +20,24 @@ const aria: Combatant = {
   maximumHitPoints: 24, additionalHitPoints: null, armorClass: 15, initiative: 18,
 }
 
+test('shows each selected character above the information in current, upcoming and target cards', () => {
+  beginCombat([{ ...witch, characterId: 'character-1' }, { ...aria, characterId: 'character-1' }])
+  const currentCard = screen.getByRole('article', { name: 'Combatente atual: Bruxa' })
+  const upcomingCard = within(screen.getByLabelText('Próximos combatentes')).getByRole('article')
+  expect(currentCard.firstElementChild).toBe(within(currentCard).getByRole('img', { name: 'Personagem de Bruxa' }))
+  expect(upcomingCard.firstElementChild).toBe(within(upcomingCard).getByRole('img', { name: 'Personagem de Aria' }))
+
+  fireEvent.click(screen.getByRole('button', { name: 'Atacar' }))
+  const target = screen.getByText('Bruxa', { selector: '.combat-target-card__name' }).closest('button')!
+  const sprite = within(target).getByRole('img', { name: 'Personagem de Bruxa' })
+  expect(target.firstElementChild).toBe(sprite)
+  expect(sprite).toHaveStyle({ width: '128px', height: '128px' })
+  expect(sprite.firstElementChild).toHaveStyle({ width: '64px', height: '64px', backgroundPosition: '0 0', transform: 'scale(2)' })
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Próximo Combatente' }))
+  expect(within(screen.getByRole('article', { name: 'Combatente atual: Aria' })).getByRole('img', { name: 'Personagem de Aria' })).toBeInTheDocument()
+})
+
 test('starts with the highest initiative and shows the remaining combatants in order', () => {
   beginCombat([
     witch,

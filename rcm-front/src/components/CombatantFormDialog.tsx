@@ -8,6 +8,9 @@ import {
 import type { Combatant, CombatantInput, CombatantType } from '../types/combatant'
 import CombatIcon from './CombatIcon'
 import PixelCornerFrame from './PixelCornerFrame'
+import { findCharacter } from '../characters'
+import CharacterSprite from './CharacterSprite'
+import CharacterPickerDialog from './CharacterPickerDialog'
 
 type CombatantFormDialogProps = {
   combatant?: Combatant
@@ -17,6 +20,8 @@ type CombatantFormDialogProps = {
 
 function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialogProps) {
   const [type, setType] = useState<CombatantType>(combatant?.type ?? 'player')
+  const [characterId, setCharacterId] = useState<string | null>(combatant?.characterId ?? null)
+  const [isCharacterPickerOpen, setIsCharacterPickerOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const dialogReference = useRef<HTMLElement>(null)
   const triggerReference = useRef<HTMLElement | null>(null)
@@ -64,6 +69,7 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
     onSave({
       type,
       name,
+      characterId,
       currentHitPoints,
       maximumHitPoints,
       additionalHitPoints,
@@ -107,7 +113,9 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-6">
       <section
         aria-labelledby="combatant-form-title"
-        aria-modal="true"
+        aria-modal={isCharacterPickerOpen ? undefined : true}
+        aria-hidden={isCharacterPickerOpen ? true : undefined}
+        inert={isCharacterPickerOpen}
         className="max-h-[calc(100svh-48px)] w-full max-w-[520px] overflow-y-auto border border-[#c79a4e] bg-[#21170f] p-7 text-[#f5e4ba] shadow-2xl"
         onKeyDown={handleKeyDown}
         ref={dialogReference}
@@ -213,6 +221,25 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
               type="number"
             />
           </label>
+          <fieldset className="m-0 min-w-0 border-0 p-0">
+            <legend className="mb-1.5 font-semibold">Personagem</legend>
+            <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" onClick={(event) => {
+              event.currentTarget.focus()
+              setIsCharacterPickerOpen(true)
+            }} type="button">
+              {characterId ? 'Mudar personagem' : 'Escolher personagem'}
+            </PixelCornerFrame>
+            {characterId ? (
+              <div className="mt-3">
+                <CharacterSprite characterId={characterId} label={findCharacter(characterId)?.name ?? 'Personagem selecionado'} />
+              </div>
+            ) : null}
+            {characterId ? (
+              <PixelCornerFrame as="button" className="mt-2 min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" onClick={() => setCharacterId(null)} type="button">
+                Remover personagem
+              </PixelCornerFrame>
+            ) : null}
+          </fieldset>
           <div className="flex flex-wrap justify-end gap-3 pt-2">
             <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" type="button" onClick={onClose}>
               Cancelar
@@ -223,6 +250,16 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
           </div>
         </form>
       </section>
+      {isCharacterPickerOpen ? (
+        <CharacterPickerDialog
+          selectedCharacterId={characterId}
+          onClose={() => setIsCharacterPickerOpen(false)}
+          onSelect={(selectedId) => {
+            setCharacterId(selectedId)
+            setIsCharacterPickerOpen(false)
+          }}
+        />
+      ) : null}
     </div>
   )
 }

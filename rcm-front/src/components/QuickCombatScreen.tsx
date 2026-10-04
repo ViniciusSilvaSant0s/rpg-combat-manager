@@ -5,6 +5,7 @@ import CombatIcon from './CombatIcon'
 import CombatantFormDialog from './CombatantFormDialog'
 import CombatScreen from './CombatScreen'
 import PixelCornerFrame from './PixelCornerFrame'
+import CharacterSprite from './CharacterSprite'
 
 function QuickCombatScreen() {
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -132,27 +133,34 @@ function QuickCombatScreen() {
         <div className="mt-6 grid gap-3" aria-label="Combatentes">
           {orderedCombatants.map((combatant) => (
             <article
-              className={`combatant-card--${combatant.type} border bg-[rgba(30,21,14,0.78)] p-[18px] shadow-[0_10px_22px_rgba(0,0,0,0.2)] ${combatant.type === 'player' ? 'border-[#82bde8] shadow-[0_0_0_1px_rgba(130,189,232,0.18),0_10px_22px_rgba(0,0,0,0.2)]' : 'border-[#d57d68] shadow-[0_0_0_1px_rgba(213,125,104,0.18),0_10px_22px_rgba(0,0,0,0.2)]'}`}
+              className={`combatant-card--${combatant.type} flex items-center justify-between gap-3 border bg-[rgba(30,21,14,0.78)] p-[18px] shadow-[0_10px_22px_rgba(0,0,0,0.2)] ${combatant.type === 'player' ? 'border-[#82bde8] shadow-[0_0_0_1px_rgba(130,189,232,0.18),0_10px_22px_rgba(0,0,0,0.2)]' : 'border-[#d57d68] shadow-[0_0_0_1px_rgba(213,125,104,0.18),0_10px_22px_rgba(0,0,0,0.2)]'}`}
               key={combatant.id}
             >
-              <h2 className="m-0 font-[family-name:var(--font-display)] text-2xl">{combatant.name}</h2>
-              <p className="mt-1.5 mb-0 text-sm text-[#d6c4a2]">{combatant.type === 'player' ? 'Jogador' : 'NPC'}</p>
-              <p className="mt-1.5 mb-0 font-bold text-[#f08a8a]">
-                <CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}
-                {combatant.additionalHitPoints && combatant.additionalHitPoints > 0
-                  ? ` - ${combatant.additionalHitPoints}`
-                  : ''}
-              </p>
-              <p className="mt-1.5 mb-0 font-bold text-[#94bce9]"><CombatIcon name="shield" />CA: {combatant.armorClass}</p>
-              <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {combatant.initiative ?? '—'}</p>
-              <div className="mt-3.5 flex gap-2">
-                <PixelCornerFrame as="button" className="min-h-[38px] cursor-pointer rounded-sm border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 text-xs font-bold tracking-[0.06em] text-[#f3dfb4] uppercase transition hover:-translate-y-px hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3" type="button" onClick={() => setEditingCombatant(combatant)}>
-                  Editar
-                </PixelCornerFrame>
-                <PixelCornerFrame as="button" className="min-h-[38px] cursor-pointer rounded-sm border border-[#e39782] bg-[#8c362d] px-[13px] py-2 text-xs font-bold tracking-[0.06em] text-[#fff4ec] uppercase shadow-[inset_0_1px_rgba(255,235,227,0.35),0_4px_12px_rgba(0,0,0,0.18)] transition hover:-translate-y-px hover:border-[#ffc0ad] hover:bg-[#a9473b] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3" type="button" onClick={() => setCombatantToRemove(combatant)}>
-                  Remover
-                </PixelCornerFrame>
+              <div className="min-w-0 flex-1 break-words">
+                <h2 className="m-0 font-[family-name:var(--font-display)] text-2xl">{combatant.name}</h2>
+                <p className="mt-1.5 mb-0 text-sm text-[#d6c4a2]">{combatant.type === 'player' ? 'Jogador' : 'NPC'}</p>
+                <p className="mt-1.5 mb-0 font-bold text-[#f08a8a]">
+                  <CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}
+                  {combatant.additionalHitPoints && combatant.additionalHitPoints > 0
+                    ? ` - ${combatant.additionalHitPoints}`
+                    : ''}
+                </p>
+                <p className="mt-1.5 mb-0 font-bold text-[#94bce9]"><CombatIcon name="shield" />CA: {combatant.armorClass}</p>
+                <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {combatant.initiative ?? '—'}</p>
+                <div className="mt-3.5 flex flex-wrap gap-2">
+                  <PixelCornerFrame as="button" className="min-h-[38px] cursor-pointer rounded-sm border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 text-xs font-bold tracking-[0.06em] text-[#f3dfb4] uppercase transition hover:-translate-y-px hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3" type="button" onClick={() => setEditingCombatant(combatant)}>
+                    Editar
+                  </PixelCornerFrame>
+                  <PixelCornerFrame as="button" className="min-h-[38px] cursor-pointer rounded-sm border border-[#e39782] bg-[#8c362d] px-[13px] py-2 text-xs font-bold tracking-[0.06em] text-[#fff4ec] uppercase shadow-[inset_0_1px_rgba(255,235,227,0.35),0_4px_12px_rgba(0,0,0,0.18)] transition hover:-translate-y-px hover:border-[#ffc0ad] hover:bg-[#a9473b] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3" type="button" onClick={() => setCombatantToRemove(combatant)}>
+                    Remover
+                  </PixelCornerFrame>
+                </div>
               </div>
+              {combatant.characterId ? (
+                <div className="flex shrink-0 items-center justify-center">
+                  <CharacterSprite characterId={combatant.characterId} label={`Personagem de ${combatant.name}`} />
+                </div>
+              ) : null}
             </article>
           ))}
         </div>
