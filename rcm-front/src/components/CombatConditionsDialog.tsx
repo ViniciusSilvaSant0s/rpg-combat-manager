@@ -15,9 +15,9 @@ export default function CombatConditionsDialog({ combatants, onConfirm, onClose,
   const [targetIds, setTargetIds] = useState<string[]>([])
   const [conditionIds, setConditionIds] = useState<ConditionId[]>([])
 
-  return <ConditionDialog title={step === 'targets' ? 'Selecionar combatentes' : 'Condição / Bonûs'} onClose={onClose} returnFocusTo={returnFocusTo}>
+  return <ConditionDialog title={step === 'targets' ? 'Selecionar combatentes' : 'Condição / Bônus'} onClose={onClose} returnFocusTo={returnFocusTo}>
     {step === 'targets' ? <>
-      <p className="mt-0 text-sm text-[#d6c4a2]">Selecione os combatentes que receberão as opções de Condição / Bonûs.</p>
+      <p className="mt-0 text-sm text-[#d6c4a2]">Selecione os combatentes que receberão as opções de Condição / Bônus.</p>
       <div className="condition-target-grid">
         {combatants.map((combatant) => <PixelCornerFrame as="button" className="condition-target"
           type="button" key={combatant.id} aria-label={combatant.name}

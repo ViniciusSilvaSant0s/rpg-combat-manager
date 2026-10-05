@@ -75,7 +75,7 @@ export function ConditionPickerContent({ selectedIds, onChange, onConfirm, onClo
           </div>)}
         </div>
       </fieldset>)}
-      <div className="condition-legend" aria-label="Categorias de Condição / Bonûs">
+      <div className="condition-legend" aria-label="Categorias de Condição / Bônus">
         {Object.values(conditionCategories).map((category) => <span key={category.name}>
           <span aria-hidden="true" style={{ backgroundColor: category.color }} />{category.name}
         </span>)}
@@ -85,7 +85,7 @@ export function ConditionPickerContent({ selectedIds, onChange, onConfirm, onClo
     <div className="condition-dialog-actions">
       {onBack ? <PixelCornerFrame as="button" className="condition-action" type="button" onClick={onBack}>Voltar</PixelCornerFrame> : null}
       <PixelCornerFrame as="button" className="condition-action" type="button" onClick={onClose}>Cancelar</PixelCornerFrame>
-      <PixelCornerFrame as="button" className="condition-action condition-action--primary" type="button" disabled={selectedIds.length === 0} onClick={onConfirm}>Confirmar Condição / Bonûs</PixelCornerFrame>
+      <PixelCornerFrame as="button" className="condition-action condition-action--primary" type="button" disabled={selectedIds.length === 0} onClick={onConfirm}>Confirmar Condição / Bônus</PixelCornerFrame>
     </div>
   </>
 }
@@ -97,7 +97,7 @@ export default function ConditionPickerDialog({ selectedIds, onConfirm, onClose,
   returnFocusTo: HTMLElement | null
 }) {
   const [draft, setDraft] = useState<ConditionId[]>(() => [...selectedIds])
-  return <ConditionDialog title="Condição / Bonûs" onClose={onClose} returnFocusTo={returnFocusTo}>
+  return <ConditionDialog title="Condição / Bônus" onClose={onClose} returnFocusTo={returnFocusTo}>
     <ConditionPickerContent selectedIds={draft} onChange={setDraft}
       onConfirm={() => onConfirm(draft)} onClose={onClose} />
   </ConditionDialog>

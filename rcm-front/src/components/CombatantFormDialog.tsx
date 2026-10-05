@@ -231,12 +231,12 @@ function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo }: Comb
             />
           </label>
           <fieldset className="m-0 min-w-0 border-0 p-0">
-            <legend className="mb-1.5 font-semibold">Condição / Bonûs</legend>
+            <legend className="mb-1.5 font-semibold">Condição / Bônus</legend>
             <PixelCornerFrame as="button" className="condition-action" type="button" onClick={(event) => {
               event.currentTarget.focus()
               conditionTriggerReference.current = event.currentTarget
               setIsConditionPickerOpen(true)
-            }}>Adicionar Condição / Bonûs</PixelCornerFrame>
+            }}>Adicionar Condição / Bônus</PixelCornerFrame>
             <ConditionList conditionIds={conditionIds} onRemove={(id) => setConditionIds((ids) => ids.filter((entry) => entry !== id))} />
           </fieldset>
           <fieldset className="m-0 min-w-0 border-0 p-0">

@@ -333,7 +333,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
         event.currentTarget.focus()
         conditionTriggerReference.current = event.currentTarget
         setIsConditionFlowOpen(true)
-      }}>Adicionar Condição / Bonûs</PixelCornerFrame>
+      }}>Adicionar Condição / Bônus</PixelCornerFrame>
       </div>
 
       {isConditionFlowOpen ? <CombatConditionsDialog combatants={orderedCombatants}

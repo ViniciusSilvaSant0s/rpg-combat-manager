@@ -77,7 +77,7 @@ export default function ConditionList({ conditionIds, onRemove, compact = false 
   compact?: boolean
 }) {
   if (conditionIds.length === 0) return null
-  return <div aria-label="Condição / Bonûs" className={`condition-list${compact ? ' condition-list--compact' : ''}`}>
+  return <div aria-label="Condição / Bônus" className={`condition-list${compact ? ' condition-list--compact' : ''}`}>
     {conditionIds.map((id) => {
       const condition = findCondition(id)
       if (!condition) return null
