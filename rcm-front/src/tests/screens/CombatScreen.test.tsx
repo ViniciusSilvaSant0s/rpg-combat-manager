@@ -13,11 +13,11 @@ function openActionForAria(action: 'attack' | 'heal', amount: number) {
 
 const witch: Combatant = {
   id: 'witch', type: 'npc', name: 'Bruxa', currentHitPoints: 31,
-  maximumHitPoints: 38, additionalHitPoints: null, armorClass: 14, initiative: 20,
+  maximumHitPoints: 38, additionalHitPoints: null, conditions: [], armorClass: 14, initiative: 20,
 }
 const aria: Combatant = {
   id: 'aria', type: 'player', name: 'Aria', currentHitPoints: 18,
-  maximumHitPoints: 24, additionalHitPoints: null, armorClass: 15, initiative: 18,
+  maximumHitPoints: 24, additionalHitPoints: null, conditions: [], armorClass: 15, initiative: 18,
 }
 
 test('shows each selected character above the information in current, upcoming and target cards', () => {
@@ -42,7 +42,7 @@ test('starts with the highest initiative and shows the remaining combatants in o
   beginCombat([
     witch,
     aria,
-    { id: 'goblin', type: 'npc', name: 'Goblin', currentHitPoints: 7, maximumHitPoints: 7, additionalHitPoints: null, armorClass: 13, initiative: 14 },
+    { id: 'goblin', type: 'npc', name: 'Goblin', currentHitPoints: 7, maximumHitPoints: 7, additionalHitPoints: null, conditions: [], armorClass: 13, initiative: 14 },
   ])
 
   expect(screen.getByRole('heading', { name: 'Combate em andamento' })).toBeInTheDocument()
@@ -152,8 +152,8 @@ test('keeps registration order on initiative ties, puts missing initiatives last
   beginCombat([
     witch,
     aria,
-    { id: 'kael', type: 'player', name: 'Kael', currentHitPoints: 22, maximumHitPoints: 22, additionalHitPoints: null, armorClass: 16, initiative: 18 },
-    { id: 'goblin', type: 'npc', name: 'Goblin', currentHitPoints: 7, maximumHitPoints: 7, additionalHitPoints: null, armorClass: 13, initiative: null },
+    { id: 'kael', type: 'player', name: 'Kael', currentHitPoints: 22, maximumHitPoints: 22, additionalHitPoints: null, conditions: [], armorClass: 16, initiative: 18 },
+    { id: 'goblin', type: 'npc', name: 'Goblin', currentHitPoints: 7, maximumHitPoints: 7, additionalHitPoints: null, conditions: [], armorClass: 13, initiative: null },
   ])
 
   expect(within(screen.getByLabelText('Próximos combatentes')).getAllByRole('heading').map((heading) => heading.textContent)).toEqual([

@@ -11,7 +11,7 @@ const combatant: Combatant = {
   characterId: null,
   currentHitPoints: 18,
   maximumHitPoints: 24,
-  additionalHitPoints: null,
+  additionalHitPoints: null, conditions: [],
   armorClass: 15,
   initiative: 14,
 }
@@ -54,7 +54,7 @@ describe('combatant storage', () => {
       ...combatant,
       currentHitPoints: 24,
       name: 'Aria',
-      additionalHitPoints: null,
+      additionalHitPoints: null, conditions: [],
     }])
   })
 

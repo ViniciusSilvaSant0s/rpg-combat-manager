@@ -1,5 +1,6 @@
 import type { Combatant } from './types/combatant'
 import { findCharacter } from './characters'
+import { normalizeConditions } from './conditions'
 
 const storageKey = 'rpg-combat-manager.combatants'
 
@@ -22,6 +23,7 @@ export function loadCombatants(): Combatant[] {
       currentHitPoints: Math.min(combatant.currentHitPoints, combatant.maximumHitPoints),
       additionalHitPoints: combatant.additionalHitPoints ?? null,
       characterId: findCharacter(combatant.characterId)?.id ?? null,
+      conditions: normalizeConditions(combatant.conditions),
     }))
   } catch {
     return []
@@ -32,7 +34,7 @@ export function saveCombatants(combatants: Combatant[]) {
   localStorage.setItem(storageKey, JSON.stringify(combatants))
 }
 
-function isCombatant(value: unknown): value is Combatant {
+function isCombatant(value: unknown): value is Omit<Combatant, 'conditions'> & { conditions?: unknown } {
   if (!value || typeof value !== 'object') {
     return false
   }
