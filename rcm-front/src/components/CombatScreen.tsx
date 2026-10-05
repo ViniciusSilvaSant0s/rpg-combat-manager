@@ -3,6 +3,9 @@ import type { Combatant } from '../types/combatant'
 import CombatIcon from './CombatIcon'
 import PixelCornerFrame from './PixelCornerFrame'
 import CharacterSprite from './CharacterSprite'
+import type { ConditionId } from '../conditions'
+import ConditionList from './ConditionDisplay'
+import CombatConditionsDialog from './CombatConditionsDialog'
 
 type CombatAction = 'attack' | 'heal'
 
@@ -59,6 +62,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
   const orderedCombatants = orderCombatants(combatants)
   const [currentCombatantId, setCurrentCombatantId] = useState(orderedCombatants[0]?.id ?? '')
   const [history, setHistory] = useState<CombatHistoryEntry[]>([])
+  const [isConditionFlowOpen, setIsConditionFlowOpen] = useState(false)
   const [pendingAction, setPendingAction] = useState<CombatAction | null>(null)
   const [pendingHealing, setPendingHealing] = useState<PendingHealing | null>(null)
   const [selectedCombatant, setSelectedCombatant] = useState<Combatant | null>(null)
@@ -68,6 +72,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
   const [targetPageCapacity, setTargetPageCapacity] = useState(1)
   const dialogReference = useRef<HTMLElement>(null)
   const triggerReference = useRef<HTMLElement | null>(null)
+  const conditionTriggerReference = useRef<HTMLElement | null>(null)
   const targetGridReference = useRef<HTMLDivElement>(null)
 
   const currentCombatant = orderedCombatants.find((combatant) => combatant.id === currentCombatantId)
@@ -83,7 +88,6 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
   useEffect(() => {
     if (!isDialogOpen) return
 
-    triggerReference.current = document.activeElement as HTMLElement
     dialogReference.current?.querySelector<HTMLElement>('button, input')?.focus()
 
     return () => triggerReference.current?.focus()
@@ -162,7 +166,8 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
     setCurrentCombatantId(orderedCombatants[(currentIndex + 1) % orderedCombatants.length].id)
   }
 
-  function openTargetSelection(action: CombatAction) {
+  function openTargetSelection(action: CombatAction, trigger: HTMLElement) {
+    triggerReference.current = trigger
     setTargetPage(0)
     setPendingAction(action)
   }
@@ -240,6 +245,26 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
     setHistory((entries) => entries.slice(0, -1))
   }
 
+  function applyConditions(targetIds: string[], conditionIds: ConditionId[]) {
+    const targets = new Set(targetIds)
+    const hasChanges = combatants.some((combatant) => targets.has(combatant.id)
+      && conditionIds.some((id) => !combatant.conditions.includes(id)))
+    if (hasChanges) {
+      rememberCurrentState()
+      onCombatantsChange(combatants.map((combatant) => targets.has(combatant.id)
+        ? { ...combatant, conditions: [...new Set([...combatant.conditions, ...conditionIds])] }
+        : combatant))
+    }
+    setIsConditionFlowOpen(false)
+  }
+
+  function removeCondition(combatantId: string, conditionId: ConditionId) {
+    rememberCurrentState()
+    onCombatantsChange(combatants.map((combatant) => combatant.id === combatantId
+      ? { ...combatant, conditions: combatant.conditions.filter((id) => id !== conditionId) }
+      : combatant))
+  }
+
   if (!currentCombatant) return null
 
   const actionLabel = pendingAction === 'attack' ? 'ataque' : 'cura'
@@ -253,6 +278,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
 
   return (
     <main aria-label="Combate em andamento" className="min-h-[100svh] bg-[radial-gradient(circle_at_50%_0%,rgba(166,119,48,0.2),transparent_42%),linear-gradient(135deg,rgba(22,15,10,0.9),rgba(8,7,7,0.96))]">
+      <div className="pb-24" inert={isDialogOpen || isConditionFlowOpen} aria-hidden={isDialogOpen || isConditionFlowOpen ? true : undefined}>
       <header className="border-b border-[rgba(199,154,78,0.5)] px-6 py-5 max-[620px]:px-4">
         <p className="m-0 font-[family-name:var(--font-ui)] text-xs font-bold tracking-[0.2em] text-[#d7af66] uppercase">Próximos combatentes</p>
         <div
@@ -260,9 +286,10 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
           className="mt-2.5 flex gap-2.5 overflow-x-auto pb-2"
         >
           {upcomingCombatants.map((combatant) => (
-            <article className={`relative min-w-[180px] ${upcomingCombatants.length >= 4 ? 'flex-1' : 'flex-[0_0_180px]'} border bg-[rgba(30,21,14,0.78)] p-3 ${combatant.type === 'player' ? 'border-[#82bde8]' : 'border-[#d57d68]'}`} key={combatant.id}>
+            <article className={`relative min-w-[260px] ${upcomingCombatants.length >= 4 ? 'flex-1' : 'flex-[0_0_260px]'} border bg-[rgba(30,21,14,0.78)] p-3 ${combatant.type === 'player' ? 'border-[#82bde8]' : 'border-[#d57d68]'}`} key={combatant.id}>
               <CharacterSprite characterId={combatant.characterId} label={`Personagem de ${combatant.name}`} className="mx-auto mb-2" />
               <h2 className="m-0 font-[family-name:var(--font-display)] text-lg">{combatant.name}</h2>
+              <ConditionList compact conditionIds={combatant.conditions} onRemove={(id) => removeCondition(combatant.id, id)} />
               <p className="mt-1.5 mb-0"><CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}{combatant.additionalHitPoints && combatant.additionalHitPoints > 0 ? ` - ${combatant.additionalHitPoints}` : ''}</p>
               <p className="mt-1.5 mb-0"><CombatIcon name="shield" />Defesa: {combatant.armorClass}</p>
               <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {combatant.initiative ?? '—'}</p>
@@ -284,6 +311,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
           <CharacterSprite characterId={currentCombatant.characterId} label={`Personagem de ${currentCombatant.name}`} className="mx-auto mb-2" />
           <h2 className="m-0 font-[family-name:var(--font-display)] text-[clamp(2rem,5vw,3.2rem)]">{currentCombatant.name}</h2>
           <p className="mt-1.5 mb-0 text-[#d6c4a2]">{currentCombatant.type === 'player' ? 'Jogador' : 'NPC'}</p>
+          <ConditionList conditionIds={currentCombatant.conditions} onRemove={(id) => removeCondition(currentCombatant.id, id)} />
           <p className="mt-1.5 mb-0 font-bold text-[#f08a8a]"><CombatIcon name="heart" />PV: {currentCombatant.currentHitPoints} / {currentCombatant.maximumHitPoints}{currentCombatant.additionalHitPoints && currentCombatant.additionalHitPoints > 0 ? ` - ${currentCombatant.additionalHitPoints}` : ''}</p>
           <p className="mt-1.5 mb-0 font-bold text-[#94bce9]"><CombatIcon name="shield" />Defesa: {currentCombatant.armorClass}</p>
           <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {currentCombatant.initiative ?? '—'}</p>
@@ -292,14 +320,25 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
           ) : null}
         </article>
         <div className="mt-[18px] grid w-full max-w-[460px] grid-cols-3 gap-2.5 max-[620px]:grid-cols-1" aria-label="Ações de combate">
-          <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 font-[family-name:var(--font-ui)] font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" aria-label="Atacar" type="button" onClick={() => openTargetSelection('attack')}><CombatIcon name="sword" />Atacar</PixelCornerFrame>
-          <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 font-[family-name:var(--font-ui)] font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" aria-label="Curar" type="button" onClick={() => openTargetSelection('heal')}>✚ Curar</PixelCornerFrame>
+          <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 font-[family-name:var(--font-ui)] font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" aria-label="Atacar" type="button" onClick={(event) => openTargetSelection('attack', event.currentTarget)}><CombatIcon name="sword" />Atacar</PixelCornerFrame>
+          <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 font-[family-name:var(--font-ui)] font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" aria-label="Curar" type="button" onClick={(event) => openTargetSelection('heal', event.currentTarget)}>✚ Curar</PixelCornerFrame>
           <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] px-[13px] py-2 font-[family-name:var(--font-ui)] font-bold text-[#26180b] hover:from-[#e6bb61] hover:to-[#bd8637] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" aria-label="Próximo Combatente" type="button" onClick={advanceCombatant}><CombatIcon name="follow" />Próximo Combatente</PixelCornerFrame>
         </div>
         <PixelCornerFrame as="button" aria-label="Desfazer última ação" className="mt-4 min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 font-[family-name:var(--font-ui)] font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-55" disabled={history.length === 0} type="button" onClick={undoLastAction}>
           <CombatIcon name="reset" mirrored />Desfazer última ação
         </PixelCornerFrame>
       </section>
+
+      <PixelCornerFrame as="button" className="condition-action condition-combat-trigger" type="button" onClick={(event) => {
+        event.currentTarget.focus()
+        conditionTriggerReference.current = event.currentTarget
+        setIsConditionFlowOpen(true)
+      }}>Adicionar Condição / Bonûs</PixelCornerFrame>
+      </div>
+
+      {isConditionFlowOpen ? <CombatConditionsDialog combatants={orderedCombatants}
+        returnFocusTo={conditionTriggerReference.current}
+        onConfirm={applyConditions} onClose={() => setIsConditionFlowOpen(false)} /> : null}
 
       {isDialogOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-6">

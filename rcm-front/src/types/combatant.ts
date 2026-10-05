@@ -1,3 +1,5 @@
+import type { ConditionId } from '../conditions'
+
 export type CombatantType = 'player' | 'npc'
 
 export type Combatant = {
@@ -5,6 +7,7 @@ export type Combatant = {
   type: CombatantType
   name: string
   characterId?: string | null
+  conditions: ConditionId[]
   currentHitPoints: number
   maximumHitPoints: number
   additionalHitPoints: number | null

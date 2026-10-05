@@ -11,30 +11,38 @@ import PixelCornerFrame from './PixelCornerFrame'
 import { findCharacter } from '../characters'
 import CharacterSprite from './CharacterSprite'
 import CharacterPickerDialog from './CharacterPickerDialog'
+import type { ConditionId } from '../conditions'
+import ConditionList from './ConditionDisplay'
+import ConditionPickerDialog from './ConditionPickerDialog'
 
 type CombatantFormDialogProps = {
   combatant?: Combatant
   onClose: () => void
   onSave: (combatant: CombatantInput) => void
+  returnFocusTo: HTMLElement | null
 }
 
-function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialogProps) {
+function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo }: CombatantFormDialogProps) {
   const [type, setType] = useState<CombatantType>(combatant?.type ?? 'player')
   const [characterId, setCharacterId] = useState<string | null>(combatant?.characterId ?? null)
   const [isCharacterPickerOpen, setIsCharacterPickerOpen] = useState(false)
+  const [conditionIds, setConditionIds] = useState<ConditionId[]>(combatant?.conditions ?? [])
+  const [isConditionPickerOpen, setIsConditionPickerOpen] = useState(false)
+  const isPickerOpen = isCharacterPickerOpen || isConditionPickerOpen
   const [error, setError] = useState<string | null>(null)
   const dialogReference = useRef<HTMLElement>(null)
   const triggerReference = useRef<HTMLElement | null>(null)
+  const conditionTriggerReference = useRef<HTMLElement | null>(null)
   const isEditing = combatant !== undefined
 
   useEffect(() => {
-    triggerReference.current = document.activeElement as HTMLElement
+    triggerReference.current = returnFocusTo
     dialogReference.current?.querySelector<HTMLElement>('[role="radio"], input, button')?.focus()
 
     return () => {
       triggerReference.current?.focus()
     }
-  }, [])
+  }, [returnFocusTo])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -70,6 +78,7 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
       type,
       name,
       characterId,
+      conditions: conditionIds,
       currentHitPoints,
       maximumHitPoints,
       additionalHitPoints,
@@ -113,9 +122,9 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-6">
       <section
         aria-labelledby="combatant-form-title"
-        aria-modal={isCharacterPickerOpen ? undefined : true}
-        aria-hidden={isCharacterPickerOpen ? true : undefined}
-        inert={isCharacterPickerOpen}
+        aria-modal={isPickerOpen ? undefined : true}
+        aria-hidden={isPickerOpen ? true : undefined}
+        inert={isPickerOpen}
         className="max-h-[calc(100svh-48px)] w-full max-w-[520px] overflow-y-auto border border-[#c79a4e] bg-[#21170f] p-7 text-[#f5e4ba] shadow-2xl"
         onKeyDown={handleKeyDown}
         ref={dialogReference}
@@ -222,6 +231,15 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
             />
           </label>
           <fieldset className="m-0 min-w-0 border-0 p-0">
+            <legend className="mb-1.5 font-semibold">Condição / Bonûs</legend>
+            <PixelCornerFrame as="button" className="condition-action" type="button" onClick={(event) => {
+              event.currentTarget.focus()
+              conditionTriggerReference.current = event.currentTarget
+              setIsConditionPickerOpen(true)
+            }}>Adicionar Condição / Bonûs</PixelCornerFrame>
+            <ConditionList conditionIds={conditionIds} onRemove={(id) => setConditionIds((ids) => ids.filter((entry) => entry !== id))} />
+          </fieldset>
+          <fieldset className="m-0 min-w-0 border-0 p-0">
             <legend className="mb-1.5 font-semibold">Personagem</legend>
             <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" onClick={(event) => {
               event.currentTarget.focus()
@@ -260,6 +278,12 @@ function CombatantFormDialog({ combatant, onClose, onSave }: CombatantFormDialog
           }}
         />
       ) : null}
+      {isConditionPickerOpen ? <ConditionPickerDialog selectedIds={conditionIds}
+        returnFocusTo={conditionTriggerReference.current}
+        onClose={() => setIsConditionPickerOpen(false)} onConfirm={(ids) => {
+          setConditionIds(ids)
+          setIsConditionPickerOpen(false)
+        }} /> : null}
     </div>
   )
 }

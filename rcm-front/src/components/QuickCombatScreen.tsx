@@ -3,6 +3,7 @@ import { loadCombatants, saveCombatants } from '../combatantStorage'
 import type { Combatant, CombatantInput } from '../types/combatant'
 import CombatIcon from './CombatIcon'
 import CombatantFormDialog from './CombatantFormDialog'
+import ConditionList from './ConditionDisplay'
 import CombatScreen from './CombatScreen'
 import PixelCornerFrame from './PixelCornerFrame'
 import CharacterSprite from './CharacterSprite'
@@ -13,8 +14,10 @@ function QuickCombatScreen() {
   const [editingCombatant, setEditingCombatant] = useState<Combatant | null>(null)
   const [combatantToRemove, setCombatantToRemove] = useState<Combatant | null>(null)
   const [isCombatStarted, setIsCombatStarted] = useState(false)
+  const isDialogOpen = isFormOpen || editingCombatant !== null || combatantToRemove !== null
   const removalDialogReference = useRef<HTMLElement>(null)
   const removalTriggerReference = useRef<HTMLElement | null>(null)
+  const formTriggerReference = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     saveCombatants(combatants)
@@ -25,7 +28,6 @@ function QuickCombatScreen() {
       return
     }
 
-    removalTriggerReference.current = document.activeElement as HTMLElement
     removalDialogReference.current?.querySelector<HTMLElement>('button')?.focus()
 
     return () => {
@@ -112,13 +114,17 @@ function QuickCombatScreen() {
 
   return (
     <main aria-label="Combate rápido" className="flex min-h-[100svh] justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(166,119,48,0.2),transparent_42%),linear-gradient(135deg,rgba(22,15,10,0.9),rgba(8,7,7,0.96))] px-6 py-12 max-[620px]:px-4">
-      <section className="w-full max-w-[900px]" aria-labelledby="quick-combat-title">
+      <section className="w-full max-w-[900px]" aria-labelledby="quick-combat-title"
+        inert={isDialogOpen} aria-hidden={isDialogOpen ? true : undefined}>
         <p className="m-0 font-[family-name:var(--font-ui)] text-xs font-bold tracking-[0.2em] text-[#d7af66] uppercase">Modo offline</p>
         <h1 id="quick-combat-title" className="mt-3 mb-6 font-[family-name:var(--font-display)] text-4xl font-semibold text-[#f5e4ba]">Combate rápido</h1>
         <PixelCornerFrame as="button"
           type="button"
           className="min-h-11 cursor-pointer rounded-sm border border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] px-4 py-2 font-[family-name:var(--font-ui)] text-xs font-bold tracking-[0.06em] text-[#26180b] uppercase transition hover:-translate-y-px hover:from-[#e6bb61] hover:to-[#bd8637] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3"
-          onClick={() => setIsFormOpen(true)}
+          onClick={(event) => {
+            formTriggerReference.current = event.currentTarget
+            setIsFormOpen(true)
+          }}
         >
           Criar Combatente
         </PixelCornerFrame>
@@ -147,11 +153,16 @@ function QuickCombatScreen() {
                 </p>
                 <p className="mt-1.5 mb-0 font-bold text-[#94bce9]"><CombatIcon name="shield" />CA: {combatant.armorClass}</p>
                 <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {combatant.initiative ?? '—'}</p>
+                <ConditionList conditionIds={combatant.conditions} onRemove={(conditionId) => {
+                  setCombatants((entries) => entries.map((entry) => entry.id === combatant.id
+                    ? { ...entry, conditions: entry.conditions.filter((id) => id !== conditionId) }
+                    : entry))
+                }} />
                 <div className="mt-3.5 flex flex-wrap gap-2">
-                  <PixelCornerFrame as="button" className="min-h-[38px] cursor-pointer rounded-sm border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 text-xs font-bold tracking-[0.06em] text-[#f3dfb4] uppercase transition hover:-translate-y-px hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3" type="button" onClick={() => setEditingCombatant(combatant)}>
+                  <PixelCornerFrame as="button" className="min-h-[38px] cursor-pointer rounded-sm border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 text-xs font-bold tracking-[0.06em] text-[#f3dfb4] uppercase transition hover:-translate-y-px hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3" type="button" onClick={(event) => { formTriggerReference.current = event.currentTarget; setEditingCombatant(combatant) }}>
                     Editar
                   </PixelCornerFrame>
-                  <PixelCornerFrame as="button" className="min-h-[38px] cursor-pointer rounded-sm border border-[#e39782] bg-[#8c362d] px-[13px] py-2 text-xs font-bold tracking-[0.06em] text-[#fff4ec] uppercase shadow-[inset_0_1px_rgba(255,235,227,0.35),0_4px_12px_rgba(0,0,0,0.18)] transition hover:-translate-y-px hover:border-[#ffc0ad] hover:bg-[#a9473b] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3" type="button" onClick={() => setCombatantToRemove(combatant)}>
+                  <PixelCornerFrame as="button" className="min-h-[38px] cursor-pointer rounded-sm border border-[#e39782] bg-[#8c362d] px-[13px] py-2 text-xs font-bold tracking-[0.06em] text-[#fff4ec] uppercase shadow-[inset_0_1px_rgba(255,235,227,0.35),0_4px_12px_rgba(0,0,0,0.18)] transition hover:-translate-y-px hover:border-[#ffc0ad] hover:bg-[#a9473b] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3" type="button" onClick={(event) => { removalTriggerReference.current = event.currentTarget; setCombatantToRemove(combatant) }}>
                     Remover
                   </PixelCornerFrame>
                 </div>
@@ -167,6 +178,7 @@ function QuickCombatScreen() {
       </section>
       {isFormOpen ? (
         <CombatantFormDialog
+          returnFocusTo={formTriggerReference.current}
           onClose={() => setIsFormOpen(false)}
           onSave={createCombatant}
         />
@@ -174,6 +186,7 @@ function QuickCombatScreen() {
       {editingCombatant ? (
         <CombatantFormDialog
           combatant={editingCombatant}
+          returnFocusTo={formTriggerReference.current}
           onClose={() => setEditingCombatant(null)}
           onSave={updateCombatant}
         />
