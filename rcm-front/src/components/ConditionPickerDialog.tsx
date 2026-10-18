@@ -30,7 +30,8 @@ export function ConditionDialog({ title, onClose, children, returnFocusTo }: {
           onClose()
         }
         if (event.key !== 'Tab') return
-        const buttons = Array.from(reference.current?.querySelectorAll<HTMLElement>('button:not(:disabled)') ?? [])
+        const buttons = Array.from(reference.current?.querySelectorAll<HTMLElement>('button, input') ?? [])
+          .filter((element) => !element.matches(':disabled'))
         const first = buttons[0]
         const last = buttons.at(-1)
         if (event.shiftKey && document.activeElement === first) {
@@ -55,15 +56,23 @@ export function ConditionPickerContent({ selectedIds, onChange, onConfirm, onClo
   onBack?: () => void
 }) {
   const [tooltipConditionId, setTooltipConditionId] = useState<ConditionId | null>(null)
+  const [query, setQuery] = useState('')
+  const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+  const visibleConditions = conditions.filter((condition) => normalize(condition.name).includes(normalize(query)))
 
   return <>
-    <p className="mt-0 text-sm text-[#d6c4a2]">Selecione uma ou mais opções. Passe o mouse ou selecione um ícone para consultar sua descrição.</p>
+    <p className="mt-0 text-sm text-[#d6c4a2]">Selecione uma ou mais opções. Passe o mouse ou foque um card para consultar sua descrição.</p>
+    <label className="condition-search-label" htmlFor="condition-search">Pesquisar condições</label>
+    <input id="condition-search" className="condition-search" type="search" value={query}
+      placeholder="Nome em inglês ou português"
+      onChange={(event) => { setQuery(event.target.value); setTooltipConditionId(null) }} />
     <div className="condition-catalogue">
-      {Object.entries(conditionGroups).map(([group, label]) => <fieldset key={group} className="condition-picker-group">
+      {visibleConditions.length === 0 ? <p role="status">Nenhuma condição encontrada.</p> : null}
+      {Object.entries(conditionGroups).filter(([group]) => visibleConditions.some((condition) => condition.group === group)).map(([group, label]) => <fieldset key={group} className="condition-picker-group">
         <legend>{label}</legend>
         <div className="condition-picker-grid">
-          {conditions.filter((condition) => condition.group === group).map((condition) => <div key={condition.id} className="condition-picker-item">
-            <ConditionButton condition={condition} selected={selectedIds.includes(condition.id)}
+          {visibleConditions.filter((condition) => condition.group === group).map((condition) => <div key={condition.id} className="condition-picker-item">
+            <ConditionButton condition={condition} showName selected={selectedIds.includes(condition.id)}
               tooltipOpen={tooltipConditionId === condition.id}
               onTooltipChange={(open) => setTooltipConditionId((current) => open
                 ? condition.id : current === condition.id ? null : current)}

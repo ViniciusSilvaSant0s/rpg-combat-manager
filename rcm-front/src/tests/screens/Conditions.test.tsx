@@ -4,12 +4,51 @@ import { loadCombatants } from '../../combatantStorage'
 import { beginCombat, enterQuickCombat } from './helpers'
 import type { Combatant } from '../../types/combatant'
 import { ConditionDialog } from '../../components/ConditionPickerDialog'
+import { findCondition } from '../../conditions'
+import { ConditionIcon } from '../../components/ConditionDisplay'
+
+test('loads supplied spell and escape artwork in original colors and keeps missing icons', () => {
+  for (const id of ['action-cast-spell', 'bonus-cast-spell', 'reaction-cast-spell', 'escape']) {
+    const condition = findCondition(id)!
+    expect(condition.originalColorIcon).toMatch(/\/(cast-spell|scape)\.png/)
+    const view = render(<ConditionIcon condition={condition} />)
+    const icon = view.container.querySelector('img')!
+    expect(icon).toHaveAttribute('src', condition.originalColorIcon)
+    expect(icon.style.backgroundColor).toBe('')
+    expect(icon.style.maskImage).toBe('')
+    view.unmount()
+  }
+  expect(findCondition('blinded')?.originalColorIcon).toBeUndefined()
+})
 
 const aria: Combatant = {
   id: 'aria', type: 'player', name: 'Aria', currentHitPoints: 18,
   maximumHitPoints: 24, additionalHitPoints: null, conditions: [], armorClass: 15, initiative: 18,
 }
 const witch: Combatant = { ...aria, id: 'witch', type: 'npc', name: 'Bruxa', initiative: 20 }
+
+test('searches bilingual cards without accents and preserves hidden selections', () => {
+  enterQuickCombat([aria])
+  fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar Condição / Bônus' }))
+  const picker = screen.getByRole('dialog', { name: 'Condição / Bônus' })
+  expect(within(picker).getByText('Blinded / Cego')).toBeVisible()
+  const search = within(picker).getByRole('searchbox', { name: 'Pesquisar condições' })
+  fireEvent.change(search, { target: { value: 'BLIND' } })
+  fireEvent.click(within(picker).getByRole('button', { name: 'Cego / Blinded' }))
+  expect(within(picker).queryByRole('group', { name: 'Movimento' })).not.toBeInTheDocument()
+  fireEvent.change(search, { target: { value: 'exaustao' } })
+  expect(within(picker).getByRole('button', { name: 'Exaustão / Exhaustion' })).toBeVisible()
+  fireEvent.change(search, { target: { value: 'zzzzzz' } })
+  expect(within(picker).getByRole('status')).toHaveTextContent('Nenhuma condição encontrada')
+  fireEvent.change(search, { target: { value: '' } })
+  expect(within(picker).getByRole('button', { name: 'Cego / Blinded' })).toHaveAttribute('aria-pressed', 'true')
+  const confirm = within(picker).getByRole('button', { name: 'Confirmar Condição / Bônus' })
+  confirm.focus()
+  expect(confirm).toHaveFocus()
+  fireEvent.keyDown(confirm, { key: 'Tab' })
+  expect(search).toHaveFocus()
+})
 
 test('offers every reference entry in its group with Portuguese descriptions', () => {
   enterQuickCombat([aria])
@@ -111,10 +150,12 @@ test('canceling nested condition selection preserves form data and confines keyb
   const picker = screen.getByRole('dialog', { name: 'Condição / Bônus' })
   const first = within(picker).getByRole('button', { name: 'Cego / Blinded' })
   expect(first).toHaveFocus()
-  fireEvent.keyDown(first, { key: 'Tab', shiftKey: true })
+  const search = within(picker).getByRole('searchbox')
+  search.focus()
+  fireEvent.keyDown(search, { key: 'Tab', shiftKey: true })
   expect(within(picker).getByRole('button', { name: 'Cancelar' })).toHaveFocus()
   fireEvent.keyDown(picker, { key: 'Tab' })
-  expect(first).toHaveFocus()
+  expect(search).toHaveFocus()
   fireEvent.click(first)
   expect(screen.getByRole('tooltip')).toHaveTextContent('Cego / Blinded')
   fireEvent.keyDown(picker, { key: 'Escape' })
