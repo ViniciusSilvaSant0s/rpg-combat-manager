@@ -1,3 +1,4 @@
+import { orderCombatants } from '../combatantOrder'
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import type { Combatant } from '../types/combatant'
 import CombatIcon from './CombatIcon'
@@ -28,14 +29,6 @@ type PendingHealing = {
 type CombatScreenProps = {
   combatants: Combatant[]
   onCombatantsChange: (combatants: Combatant[]) => void
-}
-
-function orderCombatants(combatants: Combatant[]) {
-  return [...combatants].sort((first, second) => {
-    if (first.initiative === null) return second.initiative === null ? 0 : 1
-    if (second.initiative === null) return -1
-    return second.initiative - first.initiative
-  })
 }
 
 function HitPointChangeFeedback({ change }: { change: HitPointChange }) {

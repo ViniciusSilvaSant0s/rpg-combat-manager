@@ -1,3 +1,4 @@
+import { orderCombatants } from '../combatantOrder'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { loadCombatants, saveCombatants } from '../combatantStorage'
 import type { Combatant, CombatantInput } from '../types/combatant'
@@ -96,17 +97,7 @@ function QuickCombatScreen() {
     }
   }
 
-  const orderedCombatants = [...combatants].sort((first, second) => {
-    if (first.initiative === null) {
-      return second.initiative === null ? 0 : 1
-    }
-
-    if (second.initiative === null) {
-      return -1
-    }
-
-    return second.initiative - first.initiative
-  })
+  const orderedCombatants = orderCombatants(combatants)
 
   if (isCombatStarted) {
     return <CombatScreen combatants={combatants} onCombatantsChange={setCombatants} />
