@@ -23,6 +23,8 @@ type CombatantFormDialogProps = {
 }
 
 function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo }: CombatantFormDialogProps) {
+  const [initiative, setInitiative] = useState(String(combatant?.initiative ?? ''))
+  const [naturalInitiative, setNaturalInitiative] = useState<1 | 20 | null>(combatant?.naturalInitiative ?? null)
   const [type, setType] = useState<CombatantType>(combatant?.type ?? 'player')
   const [characterId, setCharacterId] = useState<string | null>(combatant?.characterId ?? null)
   const [isCharacterPickerOpen, setIsCharacterPickerOpen] = useState(false)
@@ -83,6 +85,7 @@ function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo }: Comb
       maximumHitPoints,
       additionalHitPoints,
       armorClass: Number(formData.get('armorClass')),
+      naturalInitiative,
       initiative: initiativeValue === '' ? null : Number(initiativeValue),
     })
   }
@@ -220,16 +223,34 @@ function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo }: Comb
               type="number"
             />
           </label>
-          <label className="grid gap-1.5 text-sm font-semibold">
-            <><CombatIcon name="thunder" />Iniciativa</>
-            <input
-              className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 font-normal text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]"
-              defaultValue={combatant?.initiative ?? ''}
-              name="initiative"
-              step="1"
-              type="number"
-            />
-          </label>
+          <div className="flex flex-wrap items-end gap-4">
+            <label className="grid w-24 shrink-0 gap-1.5 text-sm font-semibold">
+              <span><CombatIcon name="thunder" />Iniciativa</span>
+              <input
+                className="min-h-10 w-full min-w-0 border border-[#8a6a38] bg-[#100c09] px-2 font-normal text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]"
+                value={initiative}
+                onChange={(event) => setInitiative(event.target.value)}
+                name="initiative"
+                step="1"
+                type="number"
+              />
+            </label>
+            <div className="flex min-h-10 flex-wrap items-center gap-4">
+              {([1, 20] as const).map((natural) => (
+                <label key={natural} className="flex cursor-pointer items-center gap-2 whitespace-nowrap text-sm font-semibold">
+                  <input type="checkbox"
+                    className="size-4 accent-[#d5a951] focus-visible:outline-3 focus-visible:outline-[#f8df9d]"
+                    checked={naturalInitiative === natural}
+                    onChange={(event) => {
+                      setNaturalInitiative(event.target.checked ? natural : null)
+                      if (event.target.checked && initiative.trim() === '') setInitiative(String(natural))
+                    }}
+                  />
+                  {natural} Natural
+                </label>
+              ))}
+            </div>
+          </div>
           <fieldset className="m-0 min-w-0 border-0 p-0">
             <legend className="mb-1.5 font-semibold">Condição / Bônus</legend>
             <PixelCornerFrame as="button" className="condition-action" type="button" onClick={(event) => {

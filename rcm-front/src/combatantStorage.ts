@@ -24,6 +24,8 @@ export function loadCombatants(): Combatant[] {
       additionalHitPoints: combatant.additionalHitPoints ?? null,
       characterId: findCharacter(combatant.characterId)?.id ?? null,
       conditions: normalizeConditions(combatant.conditions),
+      ...(combatant.naturalInitiative === 1 || combatant.naturalInitiative === 20
+        ? { naturalInitiative: combatant.naturalInitiative } : { naturalInitiative: undefined }),
     }))
   } catch {
     return []

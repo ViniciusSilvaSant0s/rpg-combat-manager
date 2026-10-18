@@ -12,6 +12,7 @@ export type Combatant = {
   maximumHitPoints: number
   additionalHitPoints: number | null
   armorClass: number
+  naturalInitiative?: 1 | 20 | null
   initiative: number | null
 }
 
