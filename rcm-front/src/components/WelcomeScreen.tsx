@@ -13,9 +13,11 @@ function WelcomeScreen({ onContinueOffline }: WelcomeScreenProps) {
         className="relative w-full max-w-[540px] border border-[rgba(199,154,78,0.75)] bg-[rgba(30,21,14,0.78)] p-[clamp(36px,8vw,68px)] text-center shadow-[0_0_0_5px_rgba(76,48,22,0.38),0_26px_70px_rgba(0,0,0,0.52)] before:absolute before:top-3.5 before:left-4 before:text-2xl before:leading-none before:text-[#c79a4e] before:content-['✦'] after:absolute after:right-4 after:bottom-3.5 after:text-2xl after:leading-none after:text-[#c79a4e] after:content-['✦'] max-[480px]:p-[42px_28px]"
         aria-labelledby="welcome-title"
       >
-        <p className="m-0 font-[family-name:var(--font-ui)] text-xs font-bold tracking-[0.2em] text-[#d7af66] uppercase">
-          RPG Combat Manager
-        </p>
+        <img
+          src={`${import.meta.env.BASE_URL}branding/rpg-combat-manager-logo-pixel-clean.png`}
+          alt="RPG Combat Manager"
+          className="mx-auto block h-auto w-full max-w-[400px]"
+        />
         <h1
           id="welcome-title"
           className="mt-7 mb-[18px] font-[family-name:var(--font-display)] text-[clamp(2.5rem,8vw,4.25rem)] font-semibold tracking-[-0.045em] text-[#f5e4ba] leading-[0.95]"
