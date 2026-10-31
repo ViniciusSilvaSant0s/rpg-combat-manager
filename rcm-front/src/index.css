@@ -269,7 +269,7 @@ body {
   cursor: not-allowed;
 }
 
-.condition-combat-trigger {
+.pixel-corner-frame.condition-combat-trigger {
   position: fixed;
   z-index: 30;
   left: max(24px, env(safe-area-inset-left));
@@ -500,3 +500,47 @@ body {
   bottom: -8px;
   background-position: -16px -192px;
 }
+
+/* Reduce only the spacing around combat elements in shorter desktop windows. */
+@media (min-width: 621px) and (max-height: 1000px) {
+  .combat-content { padding-bottom: 8px; }
+  .combat-header { padding-block: clamp(4px, calc((100svh - 600px) * .04), 20px); }
+  .combat-turn { padding-block: clamp(4px, calc((100svh - 600px) * .15), 60px); }
+  .combat-current-card { padding-block: clamp(8px, calc((100svh - 600px) * .1), 48px); }
+  .combat-title {
+    margin-top: clamp(2px, calc((100svh - 600px) * .03), 12px);
+    margin-bottom: clamp(4px, calc((100svh - 600px) * .06), 24px);
+  }
+  .combat-actions { margin-top: clamp(4px, calc((100svh - 600px) * .045), 18px); }
+  .combat-undo { margin-top: clamp(4px, calc((100svh - 600px) * .04), 16px); }
+}
+
+@media (min-width: 621px) and (max-width: 850px) {
+  .combat-content { padding-bottom: max(76px, calc(68px + env(safe-area-inset-bottom))); }
+}
+
+/* Compact cards in shorter desktop and tablet windows. */
+@media (min-width: 621px) and (max-height: 850px) {
+  .combat-header article { padding-block: 6px; }
+  .combat-header article > [role='img'],
+  .combat-current-card > [role='img'] { zoom: .75; }
+  .combat-current-card { padding-block: 8px; }
+  .combat-turn { padding-block: 4px; }
+  .combat-title { margin-block: 2px 6px; }
+  .combat-actions, .combat-undo { margin-top: 4px; }
+}
+
+@media (min-width: 621px) {
+  .combat-upcoming-card { min-width: 220px; flex-basis: 220px; padding: 10px; font-size: 0.9rem; }
+  .combat-upcoming-card h2 { font-size: 1rem; }
+  .combat-current-card { max-width: 400px; padding: clamp(20px, 3vw, 36px); font-size: 0.9rem; }
+  .combat-current-card h2 { font-size: clamp(1.8rem, 4vw, 2.7rem); }
+  .combat-upcoming-card > [role='img'], .combat-current-card > [role='img'] { zoom: .85; }
+}
+@media (min-width: 621px) and (max-height: 850px) {
+  .combat-current-card { padding-block: 8px; }
+  .combat-upcoming-card > [role='img'], .combat-current-card > [role='img'] { zoom: .7; }
+}
+
+.combat-card-stats { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; }
+.combat-card-stats--current { justify-content: center; }

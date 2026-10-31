@@ -271,20 +271,20 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
 
   return (
     <main aria-label="Combate em andamento" className="min-h-[100svh] bg-[radial-gradient(circle_at_50%_0%,rgba(166,119,48,0.2),transparent_42%),linear-gradient(135deg,rgba(22,15,10,0.9),rgba(8,7,7,0.96))]">
-      <div className="pb-24" inert={isDialogOpen || isConditionFlowOpen} aria-hidden={isDialogOpen || isConditionFlowOpen ? true : undefined}>
-      <header className="border-b border-[rgba(199,154,78,0.5)] px-6 py-5 max-[620px]:px-4">
+      <div className="combat-content pb-24" inert={isDialogOpen || isConditionFlowOpen} aria-hidden={isDialogOpen || isConditionFlowOpen ? true : undefined}>
+      <header className="combat-header border-b border-[rgba(199,154,78,0.5)] px-6 py-5 max-[620px]:px-4">
         <p className="m-0 font-[family-name:var(--font-ui)] text-xs font-bold tracking-[0.2em] text-[#d7af66] uppercase">Próximos combatentes</p>
         <div
           aria-label="Próximos combatentes"
           className="mt-2.5 flex gap-2.5 overflow-x-auto pb-2"
         >
           {upcomingCombatants.map((combatant) => (
-            <article className={`relative min-w-[260px] ${upcomingCombatants.length >= 4 ? 'flex-1' : 'flex-[0_0_260px]'} border bg-[rgba(30,21,14,0.78)] p-3 ${combatant.type === 'player' ? 'border-[#82bde8]' : 'border-[#d57d68]'}`} key={combatant.id}>
+            <article className={`combat-upcoming-card relative min-w-[260px] ${upcomingCombatants.length >= 4 ? 'flex-1' : 'flex-[0_0_260px]'} border bg-[rgba(30,21,14,0.78)] p-3 ${combatant.type === 'player' ? 'border-[#82bde8]' : 'border-[#d57d68]'}`} key={combatant.id}>
               <CharacterSprite characterId={combatant.characterId} label={`Personagem de ${combatant.name}`} className="mx-auto mb-2" />
               <h2 className="m-0 font-[family-name:var(--font-display)] text-lg">{combatant.name}</h2>
               <ConditionList compact conditionIds={combatant.conditions} onRemove={(id) => removeCondition(combatant.id, id)} />
-              <p className="mt-1.5 mb-0"><CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}{combatant.additionalHitPoints && combatant.additionalHitPoints > 0 ? ` - ${combatant.additionalHitPoints}` : ''}</p>
-              <p className="mt-1.5 mb-0"><CombatIcon name="shield" />Defesa: {combatant.armorClass}</p>
+              <div className="combat-card-stats"><p className="mt-1.5 mb-0"><CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}{combatant.additionalHitPoints && combatant.additionalHitPoints > 0 ? ` - ${combatant.additionalHitPoints}` : ''}</p>
+              <p className="mt-1.5 mb-0"><CombatIcon name="shield" />Defesa: {combatant.armorClass}</p></div>
               <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {combatant.initiative ?? '—'}</p>
               {hitPointChange?.combatantId === combatant.id ? (
                 <HitPointChangeFeedback change={hitPointChange} />
@@ -294,30 +294,30 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
         </div>
       </header>
 
-      <section className="flex flex-col items-center px-6 py-[clamp(28px,5vw,60px)] max-[620px]:px-4" aria-labelledby="combat-title">
+      <section className="combat-turn flex flex-col items-center px-6 py-[clamp(28px,5vw,60px)] max-[620px]:px-4" aria-labelledby="combat-title">
         <p className="m-0 font-[family-name:var(--font-ui)] text-xs font-bold tracking-[0.2em] text-[#d7af66] uppercase">Turno atual</p>
-        <h1 id="combat-title" className="mt-3 mb-6 text-center font-[family-name:var(--font-display)] text-3xl font-semibold text-[#f5e4ba]">Combate em andamento</h1>
+        <h1 id="combat-title" className="combat-title mt-3 mb-6 text-center font-[family-name:var(--font-display)] text-3xl font-semibold text-[#f5e4ba]">Combate em andamento</h1>
         <article
           aria-label={`Combatente atual: ${currentCombatant.name}`}
-          className={`relative w-full max-w-[460px] border bg-[rgba(30,21,14,0.86)] p-[clamp(28px,5vw,48px)] text-center shadow-[0_16px_38px_rgba(0,0,0,0.3)] ${currentCombatant.type === 'player' ? 'border-[#82bde8]' : 'border-[#d57d68]'}`}
+          className={`combat-current-card relative w-full max-w-[460px] border bg-[rgba(30,21,14,0.86)] p-[clamp(28px,5vw,48px)] text-center shadow-[0_16px_38px_rgba(0,0,0,0.3)] ${currentCombatant.type === 'player' ? 'border-[#82bde8]' : 'border-[#d57d68]'}`}
         >
           <CharacterSprite characterId={currentCombatant.characterId} label={`Personagem de ${currentCombatant.name}`} className="mx-auto mb-2" />
           <h2 className="m-0 font-[family-name:var(--font-display)] text-[clamp(2rem,5vw,3.2rem)]">{currentCombatant.name}</h2>
           <p className="mt-1.5 mb-0 text-[#d6c4a2]">{currentCombatant.type === 'player' ? 'Jogador' : 'NPC'}</p>
           <ConditionList conditionIds={currentCombatant.conditions} onRemove={(id) => removeCondition(currentCombatant.id, id)} />
-          <p className="mt-1.5 mb-0 font-bold text-[#f08a8a]"><CombatIcon name="heart" />PV: {currentCombatant.currentHitPoints} / {currentCombatant.maximumHitPoints}{currentCombatant.additionalHitPoints && currentCombatant.additionalHitPoints > 0 ? ` - ${currentCombatant.additionalHitPoints}` : ''}</p>
-          <p className="mt-1.5 mb-0 font-bold text-[#94bce9]"><CombatIcon name="shield" />Defesa: {currentCombatant.armorClass}</p>
+          <div className="combat-card-stats combat-card-stats--current"><p className="mt-1.5 mb-0 font-bold text-[#f08a8a]"><CombatIcon name="heart" />PV: {currentCombatant.currentHitPoints} / {currentCombatant.maximumHitPoints}{currentCombatant.additionalHitPoints && currentCombatant.additionalHitPoints > 0 ? ` - ${currentCombatant.additionalHitPoints}` : ''}</p>
+          <p className="mt-1.5 mb-0 font-bold text-[#94bce9]"><CombatIcon name="shield" />Defesa: {currentCombatant.armorClass}</p></div>
           <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {currentCombatant.initiative ?? '—'}</p>
           {hitPointChange?.combatantId === currentCombatant.id ? (
             <HitPointChangeFeedback change={hitPointChange} />
           ) : null}
         </article>
-        <div className="mt-[18px] grid w-full max-w-[460px] grid-cols-3 gap-2.5 max-[620px]:grid-cols-1" aria-label="Ações de combate">
+        <div className="combat-actions mt-[18px] grid w-full max-w-[460px] grid-cols-3 gap-2.5 max-[620px]:grid-cols-1" aria-label="Ações de combate">
           <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 font-[family-name:var(--font-ui)] font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" aria-label="Atacar" type="button" onClick={(event) => openTargetSelection('attack', event.currentTarget)}><CombatIcon name="sword" />Atacar</PixelCornerFrame>
           <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 font-[family-name:var(--font-ui)] font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" aria-label="Curar" type="button" onClick={(event) => openTargetSelection('heal', event.currentTarget)}>✚ Curar</PixelCornerFrame>
           <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] px-[13px] py-2 font-[family-name:var(--font-ui)] font-bold text-[#26180b] hover:from-[#e6bb61] hover:to-[#bd8637] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" aria-label="Próximo Combatente" type="button" onClick={advanceCombatant}><CombatIcon name="follow" />Próximo Combatente</PixelCornerFrame>
         </div>
-        <PixelCornerFrame as="button" aria-label="Desfazer última ação" className="mt-4 min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 font-[family-name:var(--font-ui)] font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-55" disabled={history.length === 0} type="button" onClick={undoLastAction}>
+        <PixelCornerFrame as="button" aria-label="Desfazer última ação" className="combat-undo mt-4 min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-[13px] py-2 font-[family-name:var(--font-ui)] font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-55" disabled={history.length === 0} type="button" onClick={undoLastAction}>
           <CombatIcon name="reset" mirrored />Desfazer última ação
         </PixelCornerFrame>
       </section>
