@@ -6,6 +6,7 @@ const repeatedNames = new Set(conditions.map((condition) => condition.name)
   .filter((name, index, names) => names.indexOf(name) !== index))
 
 export function ConditionIcon({ condition }: { condition: ConditionDefinition }) {
+  if (condition.originalColorIcon) return <img aria-hidden="true" alt="" className="condition-icon condition-icon--original" src={condition.originalColorIcon} />
   const source = `url("${condition.icon}")`
   return <span aria-hidden="true" className="condition-icon" style={{
     backgroundColor: conditionCategories[condition.category].color,
@@ -13,12 +14,13 @@ export function ConditionIcon({ condition }: { condition: ConditionDefinition })
   }} />
 }
 
-export function ConditionButton({ condition, selected, onClick, tooltipOpen, onTooltipChange }: {
+export function ConditionButton({ condition, selected, onClick, tooltipOpen, onTooltipChange, showName = false }: {
   condition: ConditionDefinition
   selected?: boolean
   onClick?: () => void
   tooltipOpen?: boolean
   onTooltipChange?: (open: boolean) => void
+  showName?: boolean
 }) {
   const [localTooltipOpen, setLocalTooltipOpen] = useState(false)
   const isTooltipOpen = tooltipOpen ?? localTooltipOpen
@@ -53,6 +55,7 @@ export function ConditionButton({ condition, selected, onClick, tooltipOpen, onT
       }}
     >
       <ConditionIcon condition={condition} />
+      {showName ? <span className="condition-choice-name">{condition.name.split(' / ').reverse().join(' / ')}</span> : null}
       {selected ? <span aria-hidden="true" className="condition-selected">✓</span> : null}
     </button>
     {isTooltipOpen && rectangle ? createPortal(

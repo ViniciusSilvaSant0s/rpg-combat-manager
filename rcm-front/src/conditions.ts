@@ -82,13 +82,14 @@ export type ConditionDefinition = {
   category: keyof typeof conditionCategories
   group: keyof typeof conditionGroups
   icon: string
+  originalColorIcon?: string
 }
 
 // Resumos em português de todas as entradas da referência (regras de 2014):
 // https://crobi.github.io/dnd5e-quickref/preview/quickref.html
 // Os identificadores dos 15 estados originais permanecem compatíveis com os dados salvos.
 // Todas as opções são marcações informativas; seus efeitos não são automatizados.
-export const conditions: readonly ConditionDefinition[] = [
+const conditionDefinitions: readonly ConditionDefinition[] = [
   { id: 'blinded', name: 'Cego / Blinded', category: 'sensory', group: 'states', icon: visibilityOff,
     description: 'Você não consegue enxergar e falha em testes que exigem visão. Seus ataques têm desvantagem; ataques contra você têm vantagem.' },
   { id: 'charmed', name: 'Enfeitiçado / Charmed', category: 'mental', group: 'states', icon: heart,
@@ -213,6 +214,28 @@ export const conditions: readonly ConditionDefinition[] = [
   { id: 'full-cover', name: 'Cobertura total / Full cover', category: 'cover', group: 'cover', icon: shield,
     description: 'Um obstáculo encobre completamente o alvo, impedindo ataques e magias direcionados a ele. Alguns efeitos de área ainda podem alcançá-lo.' },
 ]
+
+const customIcons = import.meta.glob<string>('./assets/conditions-icons/*.{png,svg,webp,jpg,jpeg,avif}', {
+  eager: true, query: '?url', import: 'default',
+})
+const iconKey = (name: string) => name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase().replace(/[^a-z0-9]/g, '')
+const iconsByName = new Map(Object.entries(customIcons).map(([path, url]) => [
+  iconKey(path.split('/').at(-1)!.replace(/\.[^.]+$/, '')), url,
+]))
+const iconAliases: Partial<Record<ConditionId, string>> = {
+  'action-cast-spell': 'cast-spell',
+  'bonus-cast-spell': 'cast-spell',
+  'reaction-cast-spell': 'cast-spell',
+  escape: 'scape',
+}
+
+export const conditions: readonly ConditionDefinition[] = conditionDefinitions.map((condition) => ({
+  ...condition,
+  originalColorIcon: iconsByName.get(iconKey(condition.id))
+    ?? iconsByName.get(iconKey(iconAliases[condition.id] ?? ''))
+    ?? condition.name.split(' / ').map((name) => iconsByName.get(iconKey(name))).find(Boolean),
+}))
 
 export function findCondition(id: string): ConditionDefinition | undefined {
   return conditions.find((condition) => condition.id === id)
