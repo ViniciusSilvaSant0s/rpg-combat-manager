@@ -5,3 +5,7 @@ Dockerfile
 docker-compose.yml
 .git
 .gitignore
+.env
+.env.*
+!.env.example
+config/firebase-service-account.json

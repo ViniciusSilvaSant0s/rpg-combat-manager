@@ -2,9 +2,10 @@ import PixelCornerFrame from './PixelCornerFrame'
 
 type WelcomeScreenProps = {
   onContinueOffline: () => void
+  onOpenAuth: () => void
 }
 
-function WelcomeScreen({ onContinueOffline }: WelcomeScreenProps) {
+function WelcomeScreen({ onContinueOffline, onOpenAuth }: WelcomeScreenProps) {
   return (
     <main
       className="flex min-h-[100svh] items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(166,119,48,0.2),transparent_42%),linear-gradient(135deg,rgba(22,15,10,0.9),rgba(8,7,7,0.96))] px-6 max-[480px]:px-4"
@@ -37,10 +38,10 @@ function WelcomeScreen({ onContinueOffline }: WelcomeScreenProps) {
           </PixelCornerFrame>
           <PixelCornerFrame as="button"
             type="button"
-            className="min-h-[52px] cursor-not-allowed rounded-sm border border-[rgba(173,139,82,0.36)] bg-[rgba(74,54,34,0.38)] px-5 py-3 font-[family-name:var(--font-ui)] text-[0.83rem] font-bold tracking-[0.08em] text-[#a8997e] uppercase"
-            disabled
+            className="min-h-[52px] cursor-pointer rounded-sm border border-[rgba(173,139,82,0.36)] bg-[rgba(74,54,34,0.38)] px-5 py-3 font-[family-name:var(--font-ui)] text-[0.83rem] font-bold tracking-[0.08em] text-[#a8997e] uppercase"
+            onClick={onOpenAuth}
           >
-            Registrar-se ou entrar — em breve
+            Registrar-se ou entrar
           </PixelCornerFrame>
         </div>
       </section>
