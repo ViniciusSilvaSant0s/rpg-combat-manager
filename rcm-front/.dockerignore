@@ -6,3 +6,7 @@ Dockerfile
 docker-compose.yml
 .git
 .gitignore
+
+.env
+.env.*
+!.env.example

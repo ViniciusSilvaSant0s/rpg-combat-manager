@@ -1,0 +1,20 @@
+// Esquema definido pelas migrations do projeto; a aplicação no banco é manual.
+Table app_users {
+  id number [pk, increment, not null]
+  firebase_uid "varchar2(128 char)" [not null, unique]
+  email "varchar2(320 char)"
+  display_name "varchar2(255 char)"
+  nickname "varchar2(20 char)" [not null, note: 'De 3 a 20 letras ASCII, números ou sublinhados.']
+  birth_date date [not null]
+  created_at "timestamp with time zone" [not null, default: `SYSTIMESTAMP`]
+  updated_at "timestamp with time zone" [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (`LOWER(nickname)`) [unique, name: 'app_users_nickname_uk', note: 'Unicidade sem distinção entre maiúsculas e minúsculas.']
+    email [name: 'app_users_email_ix']
+  }
+
+  checks {
+    `REGEXP_LIKE(nickname, '^[A-Za-z0-9_]{3,20}$', 'c')` [name: 'app_users_nickname_ck']
+  }
+}

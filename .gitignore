@@ -3,3 +3,12 @@ instructions.md
 docs/superpowers/
 server/node_modules/
 server/dist/
+
+server/.env
+server/.env.*
+!server/.env.example
+server/config/firebase-service-account.json
+
+rcm-front/.env
+rcm-front/.env.*
+!rcm-front/.env.example

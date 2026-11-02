@@ -37,16 +37,16 @@ depois que o health check da API estiver saudável.
 
 ### Frontend
 
-O frontend usa React e Vite. A aplicação atualmente apresenta uma tela de
-boas-vindas e permite avançar para um estado de modo offline. Ainda não há
-integração de dados de domínio com a API.
+O frontend usa React e Vite. A aplicação oferece acesso offline e autenticação
+Firebase, com cadastro e edição de perfil pela API. Os dados de combate
+continuam locais.
 
 ### API
 
 A API usa Express. Ela disponibiliza `GET /health`, que responde
 `{ "status": "ok" }`, e responde `404` com `{ "error": "Not found" }` para
-rotas não encontradas. Não há, por enquanto, persistência, autenticação ou
-regras de negócio de combate implementadas.
+rotas não encontradas. A API valida tokens Firebase e persiste perfis no Oracle;
+ainda não implementa regras de negócio de combate.
 
 ## Arquitetura de evolução
 
@@ -89,12 +89,12 @@ ou usabilidade.
 
 ### API: MVC
 
-A API evoluirá com as seguintes camadas:
+A API segue as seguintes camadas:
 
 | Camada | Responsabilidade |
 | --- | --- |
 | `routes` | Definir endpoints e encaminhar requisições aos controllers. |
-| `controllers` | Tratar requisições e respostas HTTP. |
+| `controllers` | Validar requisições, acionar services e preparar respostas HTTP. |
 | `services` | Implementar regras de negócio. |
 | `repositories` | Acessar e persistir dados. |
 | `models` | Definir entidades e estruturas do domínio. |
@@ -104,6 +104,22 @@ delega a regra de negócio a um service, e o service usa repositories e models
 quando necessário. Cada camada deve manter sua responsabilidade, sem pular
 diretamente para preocupações de outra camada.
 
+No fluxo de perfil, a composição é feita em `server/src/app.ts`:
+
+```mermaid
+flowchart LR
+  rota[Route] --> autenticacao[Middleware Firebase]
+  autenticacao --> controller[Controller de perfil]
+  controller --> service[Service de perfil]
+  service --> repository[Repository de perfil]
+  repository --> banco[(Oracle)]
+  controller -. contratos .-> model[Model de perfil]
+  service -. contratos .-> model
+  repository -. contratos .-> model
+```
+
+O [guia das camadas da API](api-layers.md) detalha como implementar novas
+entidades, as responsabilidades de cada camada e os testes esperados.
 Para cada nova funcionalidade da API ou alteração em uma funcionalidade
 existente, deve ser criado ou atualizado ao menos um teste que cubra o
 comportamento implementado ou modificado.
@@ -135,3 +151,17 @@ Este é o documento único de arquitetura enquanto o projeto permanece pequeno.
 Quando o frontend ou a API acumularem decisões próprias relevantes, podem ser
 adicionados documentos específicos, como `frontend-architecture.md` ou
 `backend-architecture.md`, sem duplicar a visão geral mantida aqui.
+
+### Autenticação e persistência
+
+O frontend usa Firebase Authentication para e-mail/senha e Google. A API
+valida o ID token Bearer com Firebase Admin e usa o UID verificado para acessar
+o perfil no Oracle por node-oracledb Thin. O cadastro exige perfil com nickname
+e data de nascimento; para senha, também exige e-mail verificado. A API fornece
+GET, POST e PUT em `/profile` para o próprio usuário. O health check não
+verifica as dependências externas.
+
+As migrations SQL são executadas manualmente pelo contêiner Flyway. O índice
+do UID é único, o nickname tem índice único sem distinção de caixa e o e-mail
+tem índice próprio. A configuração Web do Firebase é pública no navegador;
+credenciais de banco e arquivos locais são ignorados pelo Git.

@@ -7,6 +7,8 @@ services:
       - sh
       - -c
       - npm ci && npm run dev
+    env_file:
+      - ./server/.env
     environment:
       PORT: 3000
       CHOKIDAR_USEPOLLING: "true"
@@ -26,6 +28,15 @@ services:
       timeout: 5s
       retries: 12
       start_period: 5s
+
+  migrations:
+    image: flyway/flyway:11
+    profiles: [migrations]
+    env_file:
+      - ./server/.env
+    volumes:
+      - ./server/migrations:/flyway/sql:ro
+    command: info
 
   front:
     build:
