@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import type { ProfileInput } from '../models/profile.js';
+import type { ProfileInput, ProfilePatch } from '../models/profile.js';
 import type { ProfileService } from '../services/profile.js';
 
 export function validProfile(input: unknown): input is ProfileInput {
@@ -9,6 +9,13 @@ export function validProfile(input: unknown): input is ProfileInput {
   if (typeof birthDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || birthDate.startsWith('0000')) return false;
   const date = new Date(`${birthDate}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === birthDate && birthDate <= new Date().toISOString().slice(0, 10);
+}
+function validPatch(input: unknown): input is ProfilePatch {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return false;
+  const patch = input as Record<string, unknown>;
+  const keys = Object.keys(patch);
+  if (!keys.length || keys.some(key => key !== 'nickname' && key !== 'birthDate')) return false;
+  return validProfile({ nickname: 'nickname' in patch ? patch.nickname : 'Valid_1', birthDate: 'birthDate' in patch ? patch.birthDate : '2000-01-01' });
 }
 function isConflict(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'PROFILE_CONFLICT';
@@ -31,9 +38,9 @@ export function createProfileController(service: ProfileService): { find: Reques
       }
     },
     async update(req, res) {
-      if (!validProfile(req.body)) { res.status(400).json({ error: 'Nickname ou data de nascimento inválidos.' }); return; }
+      if (!validPatch(req.body)) { res.status(400).json({ error: 'Nickname ou data de nascimento inválidos.' }); return; }
       try {
-        const profile = await service.update(res.locals.identity, { nickname: req.body.nickname, birthDate: req.body.birthDate });
+        const profile = await service.update(res.locals.identity, req.body);
         if (!profile) { res.status(404).json({ error: 'Perfil incompleto.' }); return; }
         res.json(profile);
       } catch (error) {

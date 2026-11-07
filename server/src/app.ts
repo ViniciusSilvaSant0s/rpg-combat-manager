@@ -1,4 +1,5 @@
 import express from 'express';
+import { profileTiming } from './profile-timing.js';
 import type { Identity, Profiles } from './models/profile.js';
 import { profiles } from './repositories/profiles.js';
 import { profileRouter } from './routes/profile.js';
@@ -13,7 +14,7 @@ export function createApp(deps: { verify: (token: string) => Promise<Identity>; 
   app.get('/health', (_request, response) => { response.json({ status: 'ok' }); });
   const service = createProfileService(deps.profiles);
   const controller = createProfileController(service);
-  app.use('/profile', profileRouter(authenticate(deps.verify), controller));
+  app.use('/profile', profileTiming, profileRouter(authenticate(deps.verify), controller));
   app.use((_request, response) => { response.status(404).json({ error: 'Not found' }); });
   return app;
 }

@@ -7,6 +7,6 @@ export function profileRouter(authenticate: RequestHandler, controller: ReturnTy
   router.use(authenticate);
   router.get('/', controller.find);
   router.post('/', controller.create);
-  router.put('/', controller.update);
+  router.patch('/', controller.update);
   return router;
 }

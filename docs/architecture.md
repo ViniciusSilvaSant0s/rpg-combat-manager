@@ -158,7 +158,7 @@ O frontend usa Firebase Authentication para e-mail/senha e Google. A API
 valida o ID token Bearer com Firebase Admin e usa o UID verificado para acessar
 o perfil no Oracle por node-oracledb Thin. O cadastro exige perfil com nickname
 e data de nascimento; para senha, também exige e-mail verificado. A API fornece
-GET, POST e PUT em `/profile` para o próprio usuário. O health check não
+GET, POST e PATCH em `/profile` para o próprio usuário. O health check não
 verifica as dependências externas.
 
 As migrations SQL são executadas manualmente pelo contêiner Flyway. O índice

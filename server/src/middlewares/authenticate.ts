@@ -1,4 +1,5 @@
 import type { RequestHandler } from 'express';
+import { measureProfileStep } from '../profile-timing.js';
 import type { Identity } from '../models/profile.js';
 
 export function authenticate(verify: (token: string) => Promise<Identity>): RequestHandler {
@@ -7,7 +8,7 @@ export function authenticate(verify: (token: string) => Promise<Identity>): Requ
     const match = /^Bearer (\S+)$/.exec(req.header('authorization') ?? '');
     if (!match) { res.status(401).json({ error: 'Não autenticado.' }); return; }
     try {
-      const identity = await verify(match[1]);
+      const identity = await measureProfileStep('auth.verify', () => verify(match[1]));
       if (identity.firebase?.sign_in_provider === 'password' && !identity.email_verified) {
         res.status(403).json({ error: 'Confirme seu e-mail antes de continuar.' }); return;
       }
