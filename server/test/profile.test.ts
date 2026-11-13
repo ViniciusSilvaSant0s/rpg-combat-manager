@@ -41,7 +41,7 @@ describe('profile API', () => {
   it('updates only the authenticated user and reports a missing profile', async () => {
     const { app, profiles } = setup();
     profiles.update.mockResolvedValueOnce(null);
-    const response = await request(app).put('/profile').set('Authorization', 'Bearer token').send({ uid: 'someone-else', nickname: 'Updated_1', birthDate: '2001-05-06' });
+    const response = await request(app).patch('/profile').set('Authorization', 'Bearer token').send({ nickname: 'Updated_1', birthDate: '2001-05-06' });
     expect(response.status).toBe(404);
     expect(profiles.update.mock.calls[0][0].uid).toBe('firebase-123');
   });
@@ -63,7 +63,7 @@ describe('profile responses', () => {
   it('returns the updated profile for the authenticated user', async () => {
     const { app, profiles } = setup();
     profiles.update.mockResolvedValue({ id: 1, nickname: 'Updated_1', birthDate: '2001-05-06' });
-    const response = await request(app).put('/profile').set('Authorization', 'Bearer token').send({ nickname: 'Updated_1', birthDate: '2001-05-06' });
+    const response = await request(app).patch('/profile').set('Authorization', 'Bearer token').send({ nickname: 'Updated_1', birthDate: '2001-05-06' });
     expect(response.status).toBe(200);
     expect(response.body.nickname).toBe('Updated_1');
     expect(profiles.update.mock.calls[0][0].uid).toBe(identity.uid);
@@ -76,4 +76,16 @@ it('prevents caching of authenticated profile responses', async () => {
   const response = await request(app).get('/profile').set('Authorization', 'Bearer token');
   expect(response.status).toBe(200);
   expect(response.headers['cache-control']).toContain('no-store');
+});
+
+
+it('accepts a partial update and rejects empty or invalid patches', async () => {
+  const { app, profiles } = setup();
+  profiles.update.mockResolvedValue({ id: 1, nickname: 'NewHero', birthDate: '2000-01-01' });
+  const response = await request(app).patch('/profile').set('Authorization', 'Bearer token').send({ nickname: 'NewHero' });
+  expect(response.status).toBe(200);
+  expect(profiles.update).toHaveBeenCalledWith(identity, { nickname: 'NewHero' });
+  for (const body of [{}, { nickname: '!' }, { birthDate: '2023-02-29' }, { extra: 'x' }]) {
+    expect((await request(app).patch('/profile').set('Authorization', 'Bearer token').send(body)).status).toBe(400);
+  }
 });

@@ -6,9 +6,10 @@ export interface Identity {
   firebase?: { sign_in_provider?: string };
 }
 export interface ProfileInput { nickname: string; birthDate: string }
+export type ProfilePatch = Partial<ProfileInput>;
 export interface Profile extends ProfileInput { id: number; email: string | null; displayName: string | null }
 export interface Profiles {
   find(identity: Identity): Promise<Profile | null>;
   create(identity: Identity, input: ProfileInput): Promise<Profile>;
-  update(identity: Identity, input: ProfileInput): Promise<Profile | null>;
+  update(identity: Identity, input: ProfilePatch): Promise<Profile | null>;
 }
