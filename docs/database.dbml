@@ -18,3 +18,21 @@ Table app_users {
     `REGEXP_LIKE(nickname, '^[A-Za-z0-9_]{3,20}$', 'c')` [name: 'app_users_nickname_ck']
   }
 }
+
+Table combatants {
+  id number [pk, increment]
+  user_id number [not null, ref: > app_users.id]
+  name "varchar2(255 char)" [not null]
+  type "varchar2(6 char)" [not null]
+  character_id "varchar2(64 char)"
+  maximum_hit_points "number(10)" [not null]
+  armor_class "number(10)" [not null]
+  created_at "timestamp with time zone" [not null, default: `SYSTIMESTAMP`]
+  updated_at "timestamp with time zone" [not null, default: `SYSTIMESTAMP`]
+  indexes { user_id [name: 'combatants_user_id_ix'] }
+  checks {
+    `type IN ('player', 'npc')`
+    `maximum_hit_points >= 0`
+    `armor_class >= 0`
+  }
+}

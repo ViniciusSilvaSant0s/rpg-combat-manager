@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { expect, test } from 'vitest'
 import App from './App'
 import './tests/combatantStorage.test'
@@ -8,6 +8,14 @@ import './tests/screens/QuickCombatScreen.test'
 import './tests/screens/NaturalInitiative.test'
 import './tests/screens/WelcomeScreen.test'
 import '../vite.config.test'
+import HomeScreen from './components/HomeScreen'
+
+test('opens combatants from the home card', () => {
+  let opened = false
+  render(<HomeScreen onCombatants={() => { opened = true }} onProfile={() => {}} onSignOut={() => {}} />)
+  fireEvent.click(screen.getByRole('button', { name: /combatentes/i }))
+  expect(opened).toBe(true)
+})
 
 test('renders the welcome screen as the application entry point', () => {
   render(<App />)

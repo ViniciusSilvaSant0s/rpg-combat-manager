@@ -13,9 +13,9 @@ function EyeIcon({ visible }: { visible: boolean }) {
 }
 
 type Profile = { nickname: string; birthDate: string }
-type Props = { onBack: () => void; onContinue: () => void }
+type Props = { onBack: () => void; onContinue: () => void; autoContinue?: boolean }
 
-export default function AuthScreen({ onBack, onContinue }: Props) {
+export default function AuthScreen({ onBack, onContinue, autoContinue = false }: Props) {
   const [user, setUser] = useState<User | null>(null)
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
@@ -45,7 +45,7 @@ export default function AuthScreen({ onBack, onContinue }: Props) {
     if (!response.ok) throw new Error('Não foi possível carregar seu perfil. Tente novamente.')
     const data: Profile = await response.json()
     if (generation.current !== requestGeneration) return
-    setProfile(data); setNickname(data.nickname); setBirthDate(data.birthDate); setStage('profile')
+    setProfile(data); setNickname(data.nickname); setBirthDate(data.birthDate); setStage('profile'); if (autoContinue) onContinue()
     } finally { if (generation.current === requestGeneration) setProfileLoading(false) }
   }
   useEffect(() => {
@@ -103,7 +103,7 @@ export default function AuthScreen({ onBack, onContinue }: Props) {
       if (generation.current !== requestGeneration) return
       if (response.status === 409) { setError('Nickname indisponível ou perfil já cadastrado.'); return }
       if (!response.ok) { setError('Confira o nickname e a data de nascimento.'); return }
-      const data: Profile = await response.json(); if (generation.current !== requestGeneration) return; setProfile(data); setStage('profile'); setMessage('Perfil salvo.')
+      const data: Profile = await response.json(); if (generation.current !== requestGeneration) return; setProfile(data); setStage('profile'); setMessage('Perfil salvo.'); if (autoContinue) onContinue()
     })
   }
   const field = 'mt-2 block w-full rounded-sm border border-[#705333] bg-[#100c09] px-4 py-3 text-base text-[#f5e4ba] placeholder:text-[#82735d] transition focus:border-[#e5bd70] focus:outline-2 focus:outline-offset-2 focus:outline-[#e5bd70]'
