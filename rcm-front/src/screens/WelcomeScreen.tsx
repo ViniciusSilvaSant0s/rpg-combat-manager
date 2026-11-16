@@ -1,4 +1,4 @@
-import PixelCornerFrame from './PixelCornerFrame'
+import PixelCornerFrame from '../components/PixelCornerFrame'
 
 type WelcomeScreenProps = {
   onContinueOffline: () => void

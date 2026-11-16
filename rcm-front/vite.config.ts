@@ -21,7 +21,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    include: ['./src/App.test.tsx', './src/AuthScreen.test.tsx', './src/SavedCombatantsScreen.test.tsx'],
+    include: ['./src/App.test.tsx', './src/AuthScreen.test.tsx', './src/SavedCombatantsScreen.test.tsx', './src/AuthenticatedNavigation.test.tsx', './src/services.test.ts'],
     setupFiles: './src/test/setup.ts',
   },
 })

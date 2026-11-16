@@ -1,12 +1,12 @@
 import { orderCombatants } from '../combatantOrder'
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import type { Combatant } from '../types/combatant'
-import CombatIcon from './CombatIcon'
-import PixelCornerFrame from './PixelCornerFrame'
-import CharacterSprite from './CharacterSprite'
+import CombatIcon from '../components/CombatIcon'
+import PixelCornerFrame from '../components/PixelCornerFrame'
+import CharacterSprite from '../components/CharacterSprite'
 import type { ConditionId } from '../conditions'
-import ConditionList from './ConditionDisplay'
-import CombatConditionsDialog from './CombatConditionsDialog'
+import ConditionList from '../components/ConditionDisplay'
+import CombatConditionsDialog from '../components/CombatConditionsDialog'
 
 type CombatAction = 'attack' | 'heal'
 

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, expect, test, vi } from 'vitest'
-import AuthScreen from './components/AuthScreen'
+import AuthScreen from './screens/AuthScreen'
 
 const mock = vi.hoisted(() => ({ listener: null as null | ((user: unknown) => void), auth: { currentUser: null as unknown }, signin: vi.fn(), register: vi.fn(), verify: vi.fn() }))
 vi.mock('./auth/firebase', () => ({ firebaseAuth: () => mock.auth }))

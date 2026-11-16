@@ -7,8 +7,9 @@ import './tests/screens/Conditions.test'
 import './tests/screens/QuickCombatScreen.test'
 import './tests/screens/NaturalInitiative.test'
 import './tests/screens/WelcomeScreen.test'
+import './Navigation.test'
 import '../vite.config.test'
-import HomeScreen from './components/HomeScreen'
+import HomeScreen from './screens/HomeScreen'
 
 test('opens combatants from the home card', () => {
   let opened = false

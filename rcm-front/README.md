@@ -1,5 +1,23 @@
 # React + TypeScript + Vite
 
+## Organização das telas e componentes
+
+As telas da aplicação ficam em `src/screens`. Componentes reutilizáveis usados por essas telas, como diálogos, ícones e elementos visuais, ficam em `src/components`.
+
+## Chamadas à API
+
+As chamadas HTTP do frontend ficam em `src/services`. Os componentes usam um service da funcionalidade, que por sua vez usa o cliente compartilhado:
+
+```text
+Componente → service da funcionalidade → services/api.ts → /api → backend
+```
+
+`api.ts` oferece `get`, `post`, `put`, `patch` e `delete`. Os caminhos são relativos a `/api` (por exemplo, `/combatants`). O cliente recebe o token Firebase quando necessário, envia-o no cabeçalho `Authorization` e serializa corpos como JSON. Ele retorna o `Response` original, inclusive em respostas de erro, para que cada service trate os códigos HTTP adequados à sua funcionalidade. Erros de rede são propagados.
+
+`combatants.ts` concentra listagem, criação, edição e exclusão de fichas, obtém o token da sessão atual e transforma falhas HTTP em erros para a tela tratar. Uma exclusão bem-sucedida pode retornar HTTP 204 sem corpo. `profile.ts` concentra as operações de perfil e preserva as respostas para a tela distinguir, por exemplo, perfil inexistente (404) e conflito (409). A autenticação com o SDK Firebase continua no componente de autenticação; apenas as chamadas ao backend passam pelos services.
+
+Para adicionar uma integração, crie um service para a funcionalidade, implemente suas operações usando `api` e chame essas operações no componente. Mantenha mensagens, carregamento e estado visual na tela. Em desenvolvimento, o proxy do Vite encaminha `/api` para o servidor, removendo esse prefixo.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:
