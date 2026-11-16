@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import { useState } from 'react'
-import SavedCombatantsScreen from './components/SavedCombatantsScreen'
+import SavedCombatantsScreen from './screens/SavedCombatantsScreen'
 import { CombatantsProvider } from './combatantsContext'
 
 vi.mock('./auth/firebase', () => ({ firebaseAuth: () => ({ currentUser: { getIdToken: async () => 'token' } }) }))

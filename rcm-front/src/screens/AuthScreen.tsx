@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, reload, sendEmailVerification, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth'
 import type { User } from 'firebase/auth'
 import { firebaseAuth } from '../auth/firebase'
+import { profileService, type Profile } from '../services/profile'
 
 function Spinner() {
   return <span aria-hidden="true" className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent align-[-2px] motion-reduce:animate-none" />
@@ -12,7 +13,6 @@ function EyeIcon({ visible }: { visible: boolean }) {
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" />{visible && <path d="M4 4l16 16" />}</svg>
 }
 
-type Profile = { nickname: string; birthDate: string }
 type Props = { onBack: () => void; onContinue: () => void; autoContinue?: boolean }
 
 export default function AuthScreen({ onBack, onContinue, autoContinue = false }: Props) {
@@ -39,7 +39,7 @@ export default function AuthScreen({ onBack, onContinue, autoContinue = false }:
     if (current.providerData.some(p => p.providerId === 'password') && !current.emailVerified) { setStage('verify'); return }
     setStage('loading'); setProfileLoading(true)
     try {
-    const response = await fetch('/api/profile', { headers: { Authorization: `Bearer ${await current.getIdToken()}` } })
+    const response = await profileService.get(await current.getIdToken())
     if (generation.current !== requestGeneration) return
     if (response.status === 404) { setStage('create'); return }
     if (!response.ok) throw new Error('Não foi possível carregar seu perfil. Tente novamente.')
@@ -99,7 +99,8 @@ export default function AuthScreen({ onBack, onContinue, autoContinue = false }:
         ...(birthDate !== profile?.birthDate ? { birthDate } : {}),
       }
       if (stage === 'profile' && Object.keys(changes).length === 0) { setMessage('Nenhuma alteração para salvar.'); return }
-      const response = await fetch('/api/profile', { method: stage === 'create' ? 'POST' : 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user.getIdToken()}` }, body: JSON.stringify(changes) })
+      const token = await user.getIdToken()
+      const response = stage === 'create' ? await profileService.create({ nickname, birthDate }, token) : await profileService.update(changes, token)
       if (generation.current !== requestGeneration) return
       if (response.status === 409) { setError('Nickname indisponível ou perfil já cadastrado.'); return }
       if (!response.ok) { setError('Confira o nickname e a data de nascimento.'); return }

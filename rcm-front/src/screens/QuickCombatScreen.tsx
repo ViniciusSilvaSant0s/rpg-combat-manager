@@ -2,19 +2,18 @@ import { orderCombatants } from '../combatantOrder'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { loadCombatants, saveCombatants } from '../combatantStorage'
 import type { Combatant, CombatantInput } from '../types/combatant'
-import CombatIcon from './CombatIcon'
-import CombatantFormDialog from './CombatantFormDialog'
-import ConditionList from './ConditionDisplay'
+import CombatIcon from '../components/CombatIcon'
+import CombatantFormDialog from '../components/CombatantFormDialog'
+import ConditionList from '../components/ConditionDisplay'
 import CombatScreen from './CombatScreen'
-import PixelCornerFrame from './PixelCornerFrame'
-import CharacterSprite from './CharacterSprite'
+import PixelCornerFrame from '../components/PixelCornerFrame'
+import CharacterSprite from '../components/CharacterSprite'
 
-function QuickCombatScreen() {
+function QuickCombatScreen({ isCombatStarted, onStartCombat }: { isCombatStarted: boolean; onStartCombat: () => void }) {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [combatants, setCombatants] = useState<Combatant[]>(loadCombatants)
   const [editingCombatant, setEditingCombatant] = useState<Combatant | null>(null)
   const [combatantToRemove, setCombatantToRemove] = useState<Combatant | null>(null)
-  const [isCombatStarted, setIsCombatStarted] = useState(false)
   const isDialogOpen = isFormOpen || editingCombatant !== null || combatantToRemove !== null
   const removalDialogReference = useRef<HTMLElement>(null)
   const removalTriggerReference = useRef<HTMLElement | null>(null)
@@ -123,7 +122,7 @@ function QuickCombatScreen() {
           className="ml-2 min-h-11 cursor-pointer rounded-sm border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-[family-name:var(--font-ui)] text-xs font-bold tracking-[0.06em] text-[#f3dfb4] uppercase transition hover:-translate-y-px hover:bg-[rgba(124,91,51,0.85)] hover:border-[#e4bc6e] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-3 disabled:cursor-not-allowed disabled:opacity-55 max-[620px]:ml-0 max-[620px]:mt-2"
           disabled={combatants.length === 0}
           type="button"
-          onClick={() => setIsCombatStarted(true)}
+          onClick={onStartCombat}
         >
           Iniciar Combate
         </PixelCornerFrame>

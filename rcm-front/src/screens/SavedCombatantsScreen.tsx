@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { firebaseAuth } from '../auth/firebase'
-import CharacterPickerDialog from './CharacterPickerDialog'
-import CharacterSprite from './CharacterSprite'
-import CombatIcon from './CombatIcon'
-import PixelCornerFrame from './PixelCornerFrame'
+import { combatantsService, type CombatantInput } from '../services/combatants'
+import CharacterPickerDialog from '../components/CharacterPickerDialog'
+import CharacterSprite from '../components/CharacterSprite'
+import CombatIcon from '../components/CombatIcon'
+import PixelCornerFrame from '../components/PixelCornerFrame'
 import { useCombatants, type SavedCombatant } from '../combatantsContext'
 
-type Input = { name: string; type: 'player' | 'npc'; characterId: string | null; maximumHitPoints: number; armorClass: number }
+type Input = CombatantInput
 type Combatant = SavedCombatant
 const empty: Input = { name: '', type: 'player', characterId: null, maximumHitPoints: 0, armorClass: 0 }
 const button = 'min-h-11 cursor-pointer border border-[#a87939] bg-[#49331e] px-4 py-2 font-bold text-[#f5e4ba] hover:bg-[#604528] focus-visible:outline-3 focus-visible:outline-[#f8df9d] disabled:opacity-50'
@@ -33,17 +33,10 @@ export default function SavedCombatantsScreen({ onBack }: { onBack: () => void }
   const [deleting, setDeleting] = useState<Combatant | null>(null)
   const [pending, setPending] = useState(false)
   const [retry, setRetry] = useState(0)
-  async function api(path = '', options: RequestInit = {}) {
-    const user = firebaseAuth().currentUser
-    if (!user) throw new Error('Sessão encerrada')
-    const response = await fetch(`/api/combatants${path}`, { ...options, headers: { Authorization: `Bearer ${await user.getIdToken()}`, ...(options.body ? { 'Content-Type': 'application/json' } : {}) } })
-    if (!response.ok) throw new Error('Não foi possível concluir. Tente novamente.')
-    return response.status === 204 ? null : response.json()
-  }
-  useEffect(() => { if (hasInitialCache.current && retry === 0) return; let active = true; setLoading(true); setError(''); api().then(data => { if (active) setItems(data) }).catch(() => { if (active) setError('Não foi possível carregar seus combatentes.') }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [retry, setItems])
+  useEffect(() => { if (hasInitialCache.current && retry === 0) return; let active = true; setLoading(true); setError(''); combatantsService.list().then(data => { if (active) setItems(data) }).catch(() => { if (active) setError('Não foi possível carregar seus combatentes.') }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [retry, setItems])
   function open(item: Combatant | null) { setEditing(item); setForm(item ? { name: item.name, type: item.type, characterId: item.characterId, maximumHitPoints: item.maximumHitPoints, armorClass: item.armorClass } : empty); setError('') }
-  async function save(event: FormEvent) { event.preventDefault(); if (pending) return; setPending(true); setError(''); try { const result: Combatant = await api(editing ? `/${editing.id}` : '', { method: editing ? 'PUT' : 'POST', body: JSON.stringify(form) }); setItems(current => editing ? (current ?? []).map(item => item.id === result.id ? result : item) : [...(current ?? []), result]); setEditing(undefined) } catch { setError('Não foi possível salvar. Confira os dados e tente novamente.') } finally { setPending(false) } }
-  async function remove() { if (!deleting || pending) return; setPending(true); setError(''); try { await api(`/${deleting.id}`, { method: 'DELETE' }); setItems(current => (current ?? []).filter(item => item.id !== deleting.id)); setDeleting(null) } catch { setError('Não foi possível excluir. Tente novamente.') } finally { setPending(false) } }
+  async function save(event: FormEvent) { event.preventDefault(); if (pending) return; setPending(true); setError(''); try { const result = editing ? await combatantsService.update(editing.id, form) : await combatantsService.create(form); setItems(current => editing ? (current ?? []).map(item => item.id === result.id ? result : item) : [...(current ?? []), result]); setEditing(undefined) } catch { setError('Não foi possível salvar. Confira os dados e tente novamente.') } finally { setPending(false) } }
+  async function remove() { if (!deleting || pending) return; setPending(true); setError(''); try { await combatantsService.remove(deleting.id); setItems(current => (current ?? []).filter(item => item.id !== deleting.id)); setDeleting(null) } catch { setError('Não foi possível excluir. Tente novamente.') } finally { setPending(false) } }
   return <main className="min-h-screen bg-[#160f0a] px-5 py-10 text-[#f5e4ba]"><div className="mx-auto max-w-5xl">
     <button className={button} onClick={onBack}>← Home</button><div className="mt-8 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl text-[#f2d184]">Meus combatentes</h1><p className="mt-2 text-[#cbb995]">Suas fichas para novas aventuras.</p></div><button className={button} onClick={() => open(null)}>+ Criar combatente</button></div>
     {error && <p role="alert" className="mt-4 text-[#ffaaa1]">{error}</p>}
