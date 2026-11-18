@@ -48,6 +48,14 @@ health check verifica apenas o processo HTTP, não Firebase ou Oracle.
 O frontend envia o token como Bearer para consultar e salvar `/api/profile`.
 O nickname deve ter de 3 a 20 letras ASCII, números ou sublinhado. O cadastro
 exige data de nascimento e, para e-mail/senha, a confirmação do e-mail.
+
+Usuários autenticados podem cadastrar fichas e combates próprios. Cada inclusão
+de ficha em um combate mantém vida atual, vida adicional, iniciativa e condições
+independentes. O combate é salvo automaticamente e pode ser retomado; o histórico
+de desfazer dura apenas enquanto a tela de combate está aberta. Se outra sessão
+alterar o mesmo combate, a aplicação informa o conflito e permite carregar o
+estado salvo. A migration V3 precisa estar aplicada para disponibilizar os
+combates e as operações de atualização e exclusão de fichas vinculadas.
 ## Migrations do banco
 
 O Flyway roda somente mediante comando explícito. Configure `FLYWAY_URL` com a

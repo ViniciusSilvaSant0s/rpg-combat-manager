@@ -11,9 +11,15 @@ export function validateCombatant(value: unknown): CombatantInput | null {
 }
 
 export function createCombatantsController(service: CombatantsService): {
-  list: RequestHandler; requireProfile: RequestHandler; create: RequestHandler; update: RequestHandler; delete: RequestHandler;
+  list: RequestHandler; requireProfile: RequestHandler; countCombats: RequestHandler; create: RequestHandler; update: RequestHandler; delete: RequestHandler;
 } {
   return {
+    async countCombats(req, res) {
+      const id = Number(req.params.id);
+      if (!Number.isSafeInteger(id) || id <= 0) { res.sendStatus(404); return; }
+      try { const count = await service.countCombats(res.locals.identity, id); if (count === null) { res.sendStatus(404); return; } res.json({ count }); }
+      catch { res.status(500).json({ error: 'Não foi possível consultar combates.' }); }
+    },
     async list(_req, res) {
       try {
         const items = await service.list(res.locals.identity);

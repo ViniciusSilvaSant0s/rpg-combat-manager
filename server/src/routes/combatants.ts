@@ -7,6 +7,7 @@ export function combatantsRouter(authenticate: RequestHandler, controller: Retur
   router.use(authenticate);
   router.get('/', controller.list);
   router.use(controller.requireProfile);
+  router.get('/:id/combats/count', controller.countCombats);
   router.post('/', controller.create);
   router.put('/:id', controller.update);
   router.delete('/:id', controller.delete);

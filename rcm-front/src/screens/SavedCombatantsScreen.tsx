@@ -31,12 +31,14 @@ export default function SavedCombatantsScreen({ onBack }: { onBack: () => void }
   const [form, setForm] = useState<Input>(empty)
   const [picker, setPicker] = useState(false)
   const [deleting, setDeleting] = useState<Combatant | null>(null)
+  const [combatCount, setCombatCount] = useState<number | null>(null)
   const [pending, setPending] = useState(false)
   const [retry, setRetry] = useState(0)
   useEffect(() => { if (hasInitialCache.current && retry === 0) return; let active = true; setLoading(true); setError(''); combatantsService.list().then(data => { if (active) setItems(data) }).catch(() => { if (active) setError('Não foi possível carregar seus combatentes.') }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [retry, setItems])
   function open(item: Combatant | null) { setEditing(item); setForm(item ? { name: item.name, type: item.type, characterId: item.characterId, maximumHitPoints: item.maximumHitPoints, armorClass: item.armorClass } : empty); setError('') }
   async function save(event: FormEvent) { event.preventDefault(); if (pending) return; setPending(true); setError(''); try { const result = editing ? await combatantsService.update(editing.id, form) : await combatantsService.create(form); setItems(current => editing ? (current ?? []).map(item => item.id === result.id ? result : item) : [...(current ?? []), result]); setEditing(undefined) } catch { setError('Não foi possível salvar. Confira os dados e tente novamente.') } finally { setPending(false) } }
   async function remove() { if (!deleting || pending) return; setPending(true); setError(''); try { await combatantsService.remove(deleting.id); setItems(current => (current ?? []).filter(item => item.id !== deleting.id)); setDeleting(null) } catch { setError('Não foi possível excluir. Tente novamente.') } finally { setPending(false) } }
+  async function openDelete(item: Combatant) { setError(''); setDeleting(item); setCombatCount(null); try { setCombatCount(await combatantsService.countCombats(item.id)) } catch { setError('Não foi possível consultar os combates vinculados.') } }
   return <main className="min-h-screen bg-[#160f0a] px-5 py-10 text-[#f5e4ba]"><div className="mx-auto max-w-5xl">
     <button className={button} onClick={onBack}>← Home</button><div className="mt-8 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl text-[#f2d184]">Meus combatentes</h1><p className="mt-2 text-[#cbb995]">Suas fichas para novas aventuras.</p></div><button className={button} onClick={() => open(null)}>+ Criar combatente</button></div>
     {error && <p role="alert" className="mt-4 text-[#ffaaa1]">{error}</p>}
@@ -49,7 +51,7 @@ export default function SavedCombatantsScreen({ onBack }: { onBack: () => void }
             {view === 'cards' ? <div><p>{item.type === 'player' ? 'Jogador' : 'NPC'}</p><p><CombatIcon name="heart" />PV {item.maximumHitPoints}</p><p><CombatIcon name="shield" />CA {item.armorClass}</p></div> : <p>{item.type === 'player' ? 'Jogador' : 'NPC'} · PV {item.maximumHitPoints} · CA {item.armorClass}</p>}
           </div>
         </div>
-        <div className={`flex gap-2 ${view === 'list' ? 'ml-auto' : 'mt-4'}`}><button className={button} onClick={() => open(item)}>Editar</button><button className={button} onClick={() => { setError(''); setDeleting(item) }}>Excluir</button></div>
+        <div className={`flex gap-2 ${view === 'list' ? 'ml-auto' : 'mt-4'}`}><button className={button} onClick={() => open(item)}>Editar</button><button className={button} onClick={() => void openDelete(item)}>Excluir</button></div>
       </article>)}
     </div>}
     {editing !== undefined && (
@@ -76,6 +78,7 @@ export default function SavedCombatantsScreen({ onBack }: { onBack: () => void }
               <legend className="mb-1.5 p-0 font-semibold"><CombatIcon name="heart" />PV (Pontos de Vida)</legend>
               <label className="sr-only" htmlFor="saved-maximum-hit-points">Vida máxima</label>
               <input id="saved-maximum-hit-points" className="min-h-10 w-full border border-[#8a6a38] bg-[#100c09] px-2 text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]" placeholder="vida máxima" type="number" required min="0" max="9999999999" step="1" value={form.maximumHitPoints} onChange={e => setForm({ ...form, maximumHitPoints: e.target.valueAsNumber })} />
+              {editing && form.maximumHitPoints < editing.maximumHitPoints && <p className="mt-2 text-sm text-[#f3dfb4]">Nos combates vinculados, a vida atual que exceder o novo máximo será somada à vida adicional.</p>}
             </fieldset>
             <label className="grid gap-1.5 text-sm font-semibold"><span><CombatIcon name="shield" />CA (Classe de Armadura)</span>
               <input className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 font-normal text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]" type="number" required min="0" max="9999999999" step="1" value={form.armorClass} onChange={e => setForm({ ...form, armorClass: e.target.valueAsNumber })} />
@@ -94,6 +97,6 @@ export default function SavedCombatantsScreen({ onBack }: { onBack: () => void }
       </div>
     )}
     {picker && <CharacterPickerDialog selectedCharacterId={form.characterId} onClose={() => setPicker(false)} onSelect={id => { setForm({ ...form, characterId: id }); setPicker(false) }} />}
-    {deleting && <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 p-4"><section role="dialog" aria-modal="true" onKeyDown={e => dialogKeys(e, () => { if (!pending) setDeleting(null) })} aria-labelledby="delete-title" className="w-full max-w-md border border-[#c79a4e] bg-[#21170f] p-6"><h2 id="delete-title" className="text-xl">Excluir {deleting.name}?</h2><p className="my-4">Esta ficha será removida da sua conta.</p>{error && <p role="alert">{error}</p>}<div className="flex gap-3"><button autoFocus className={button} disabled={pending} onClick={() => setDeleting(null)}>Cancelar</button><button className={button} disabled={pending} onClick={remove}>{pending ? 'Excluindo…' : 'Confirmar exclusão'}</button></div></section></div>}
+    {deleting && <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 p-4"><section role="dialog" aria-modal="true" onKeyDown={e => dialogKeys(e, () => { if (!pending) setDeleting(null) })} aria-labelledby="delete-title" className="w-full max-w-md border border-[#c79a4e] bg-[#21170f] p-6"><h2 id="delete-title" className="text-xl">Excluir {deleting.name}?</h2><p className="my-4">{combatCount === null ? 'Consultando combates vinculados…' : `Esta ficha está em ${combatCount} ${combatCount === 1 ? 'combate' : 'combates'} e será excluída desses combates.`}</p>{error && <p role="alert">{error}</p>}<div className="flex gap-3"><button autoFocus className={button} disabled={pending} onClick={() => setDeleting(null)}>Cancelar</button><button className={button} disabled={pending || combatCount === null} onClick={remove}>{pending ? 'Excluindo…' : 'Confirmar exclusão'}</button></div></section></div>}
   </div></main>
 }

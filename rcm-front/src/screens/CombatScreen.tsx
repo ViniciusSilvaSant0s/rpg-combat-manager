@@ -29,6 +29,10 @@ type PendingHealing = {
 type CombatScreenProps = {
   combatants: Combatant[]
   onCombatantsChange: (combatants: Combatant[]) => void
+  initialCombatantId?: string | null
+  onCurrentCombatantChange?: (id: string) => void
+  onExit?: () => void
+  saveStatus?: string
 }
 
 function HitPointChangeFeedback({ change }: { change: HitPointChange }) {
@@ -51,9 +55,16 @@ function HitPointChangeFeedback({ change }: { change: HitPointChange }) {
   )
 }
 
-function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
+function PagedConditions({ ids, onRemove }: { ids: ConditionId[]; onRemove: (id: ConditionId) => void }) {
+  const [page, setPage] = useState(0)
+  const pageCount = Math.ceil(ids.length / 3)
+  const current = Math.min(page, Math.max(0, pageCount - 1))
+  return <div><ConditionList compact conditionIds={ids.slice(current * 3, current * 3 + 3)} onRemove={onRemove} />{pageCount > 1 && <div className="flex justify-center gap-2 text-xs"><button type="button" disabled={current === 0} onClick={() => setPage(current - 1)}>Condições anteriores</button><span>{current + 1}/{pageCount}</span><button type="button" disabled={current + 1 >= pageCount} onClick={() => setPage(current + 1)}>Próximas condições</button></div>}</div>
+}
+
+function CombatScreen({ combatants, onCombatantsChange, initialCombatantId, onCurrentCombatantChange, onExit, saveStatus }: CombatScreenProps) {
   const orderedCombatants = orderCombatants(combatants)
-  const [currentCombatantId, setCurrentCombatantId] = useState(orderedCombatants[0]?.id ?? '')
+  const [currentCombatantId, setCurrentCombatantId] = useState(initialCombatantId ?? orderedCombatants[0]?.id ?? '')
   const [history, setHistory] = useState<CombatHistoryEntry[]>([])
   const [isConditionFlowOpen, setIsConditionFlowOpen] = useState(false)
   const [pendingAction, setPendingAction] = useState<CombatAction | null>(null)
@@ -156,7 +167,9 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
   function advanceCombatant() {
     if (!currentCombatant || orderedCombatants.length === 0) return
     rememberCurrentState()
-    setCurrentCombatantId(orderedCombatants[(currentIndex + 1) % orderedCombatants.length].id)
+    const nextId = orderedCombatants[(currentIndex + 1) % orderedCombatants.length].id
+    setCurrentCombatantId(nextId)
+    onCurrentCombatantChange?.(nextId)
   }
 
   function openTargetSelection(action: CombatAction, trigger: HTMLElement) {
@@ -235,6 +248,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
     setHitPointChange(null)
     onCombatantsChange(previousState.combatants)
     setCurrentCombatantId(previousState.currentCombatantId)
+    onCurrentCombatantChange?.(previousState.currentCombatantId)
     setHistory((entries) => entries.slice(0, -1))
   }
 
@@ -270,9 +284,10 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
   )
 
   return (
-    <main aria-label="Combate em andamento" className="min-h-[100svh] bg-[radial-gradient(circle_at_50%_0%,rgba(166,119,48,0.2),transparent_42%),linear-gradient(135deg,rgba(22,15,10,0.9),rgba(8,7,7,0.96))]">
+    <main aria-label="Combate em andamento" className={`${onExit ? 'saved-combat-screen' : ''} min-h-[100svh] bg-[radial-gradient(circle_at_50%_0%,rgba(166,119,48,0.2),transparent_42%),linear-gradient(135deg,rgba(22,15,10,0.9),rgba(8,7,7,0.96))]`}>
       <div className="combat-content pb-24" inert={isDialogOpen || isConditionFlowOpen} aria-hidden={isDialogOpen || isConditionFlowOpen ? true : undefined}>
       <header className="combat-header border-b border-[rgba(199,154,78,0.5)] px-6 py-5 max-[620px]:px-4">
+        {onExit && <div className="flex items-center justify-between gap-2"><button type="button" className="text-[#f5e4ba] underline" onClick={onExit}>← Gerenciar combate</button><span role="status" className="text-sm text-[#d7af66]">{saveStatus}</span></div>}
         <p className="m-0 font-[family-name:var(--font-ui)] text-xs font-bold tracking-[0.2em] text-[#d7af66] uppercase">Próximos combatentes</p>
         <div
           aria-label="Próximos combatentes"
@@ -282,7 +297,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
             <article className={`combat-upcoming-card relative min-w-[260px] ${upcomingCombatants.length >= 4 ? 'flex-1' : 'flex-[0_0_260px]'} border bg-[rgba(30,21,14,0.78)] p-3 ${combatant.type === 'player' ? 'border-[#82bde8]' : 'border-[#d57d68]'}`} key={combatant.id}>
               <CharacterSprite characterId={combatant.characterId} label={`Personagem de ${combatant.name}`} className="mx-auto mb-2" />
               <h2 className="m-0 font-[family-name:var(--font-display)] text-lg">{combatant.name}</h2>
-              <ConditionList compact conditionIds={combatant.conditions} onRemove={(id) => removeCondition(combatant.id, id)} />
+              {onExit ? <PagedConditions ids={combatant.conditions} onRemove={id => removeCondition(combatant.id, id)} /> : <ConditionList compact conditionIds={combatant.conditions} onRemove={(id) => removeCondition(combatant.id, id)} />}
               <div className="combat-card-stats"><p className="mt-1.5 mb-0"><CombatIcon name="heart" />PV: {combatant.currentHitPoints} / {combatant.maximumHitPoints}{combatant.additionalHitPoints && combatant.additionalHitPoints > 0 ? ` - ${combatant.additionalHitPoints}` : ''}</p>
               <p className="mt-1.5 mb-0"><CombatIcon name="shield" />Defesa: {combatant.armorClass}</p></div>
               <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {combatant.initiative ?? '—'}</p>
@@ -304,7 +319,7 @@ function CombatScreen({ combatants, onCombatantsChange }: CombatScreenProps) {
           <CharacterSprite characterId={currentCombatant.characterId} label={`Personagem de ${currentCombatant.name}`} className="mx-auto mb-2" />
           <h2 className="m-0 font-[family-name:var(--font-display)] text-[clamp(2rem,5vw,3.2rem)]">{currentCombatant.name}</h2>
           <p className="mt-1.5 mb-0 text-[#d6c4a2]">{currentCombatant.type === 'player' ? 'Jogador' : 'NPC'}</p>
-          <ConditionList conditionIds={currentCombatant.conditions} onRemove={(id) => removeCondition(currentCombatant.id, id)} />
+          {onExit ? <PagedConditions ids={currentCombatant.conditions} onRemove={id => removeCondition(currentCombatant.id, id)} /> : <ConditionList conditionIds={currentCombatant.conditions} onRemove={(id) => removeCondition(currentCombatant.id, id)} />}
           <div className="combat-card-stats combat-card-stats--current"><p className="mt-1.5 mb-0 font-bold text-[#f08a8a]"><CombatIcon name="heart" />PV: {currentCombatant.currentHitPoints} / {currentCombatant.maximumHitPoints}{currentCombatant.additionalHitPoints && currentCombatant.additionalHitPoints > 0 ? ` - ${currentCombatant.additionalHitPoints}` : ''}</p>
           <p className="mt-1.5 mb-0 font-bold text-[#94bce9]"><CombatIcon name="shield" />Defesa: {currentCombatant.armorClass}</p></div>
           <p className="mt-1.5 mb-0"><CombatIcon name="thunder" />Iniciativa: {currentCombatant.initiative ?? '—'}</p>

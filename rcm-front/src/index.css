@@ -584,3 +584,32 @@ body {
 
 .combat-card-stats { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; }
 .combat-card-stats--current { justify-content: center; }
+
+/* Keep the authenticated turn controls and upcoming participant visible together. */
+.saved-combat-screen .combat-content { padding-bottom: 3rem; }
+.saved-combat-screen .combat-header { padding-block: .4rem; }
+.saved-combat-screen .combat-header > div[aria-label] { margin-top: .25rem; padding-bottom: 0; }
+.saved-combat-screen .combat-upcoming-card > [role='img'] { zoom: .5; }
+.saved-combat-screen .combat-turn { padding-block: .35rem; }
+.saved-combat-screen .combat-title { margin: .2rem 0; font-size: 1.35rem; }
+.saved-combat-screen .combat-current-card { padding: .5rem; }
+.saved-combat-screen .combat-current-card > [role='img'] { zoom: .55; }
+.saved-combat-screen .combat-current-card h2 { font-size: 1.6rem; }
+.saved-combat-screen .combat-actions { margin-top: .3rem; }
+.saved-combat-screen .combat-undo { margin-top: .3rem; }
+@media (max-width: 620px) {
+  .saved-combat-screen .combat-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .25rem; }
+  .saved-combat-screen .combat-actions button { min-width: 0; padding: .35rem; font-size: .72rem; overflow-wrap: anywhere; }
+  .saved-combat-screen .condition-combat-trigger { position: static; display: block; margin: .25rem auto; }
+  .saved-combat-screen .combat-content { padding-bottom: .25rem; }
+}
+@media (max-height: 700px) {
+  .saved-combat-screen .combat-upcoming-card > [role='img'] { float: right; zoom: .3; margin: 0; }
+  .saved-combat-screen .combat-upcoming-card p { margin-top: 0; }
+  .saved-combat-screen .combat-current-card > [role='img'] { zoom: .3; margin-bottom: 0; }
+  .saved-combat-screen .combat-current-card h2 { font-size: 1.25rem; }
+  .saved-combat-screen .combat-current-card p { margin-top: .1rem; }
+  .saved-combat-screen .combat-title { font-size: 1.15rem; }
+  .saved-combat-screen .combat-actions button, .saved-combat-screen .combat-undo,
+  .saved-combat-screen .condition-combat-trigger { min-height: 36px; padding-block: .25rem; }
+}
