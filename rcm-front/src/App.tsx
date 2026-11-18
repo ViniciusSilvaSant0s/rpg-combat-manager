@@ -4,12 +4,13 @@ import WelcomeScreen from './screens/WelcomeScreen'
 import AuthScreen from './screens/AuthScreen'
 import HomeScreen from './screens/HomeScreen'
 import SavedCombatantsScreen from './screens/SavedCombatantsScreen'
+import SavedCombatsScreen from './screens/SavedCombatsScreen'
 import { firebaseAuth } from './auth/firebase'
 import { signOut, onAuthStateChanged } from 'firebase/auth'
 import { CombatantsProvider } from './combatantsContext'
 
-type Screen = 'welcome' | 'offline' | 'auth' | 'combat' | 'profile' | 'home' | 'combatants'
-const screens: Screen[] = ['welcome', 'offline', 'auth', 'combat', 'profile', 'home', 'combatants']
+type Screen = 'welcome' | 'offline' | 'auth' | 'combat' | 'profile' | 'home' | 'combatants' | 'combats'
+const screens: Screen[] = ['welcome', 'offline', 'auth', 'combat', 'profile', 'home', 'combatants', 'combats']
 
 function currentScreen(): Screen {
   const screen = window.history.state?.rpgScreen
@@ -33,7 +34,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (screen !== 'home' && screen !== 'combatants' && screen !== 'profile') return
+    if (screen !== 'home' && screen !== 'combatants' && screen !== 'combats' && screen !== 'profile') return
     const auth = firebaseAuth()
     const uid = auth.currentUser?.uid
     return onAuthStateChanged(auth, user => {
@@ -44,7 +45,7 @@ function App() {
   if (screen === 'offline' || screen === 'combat') return <QuickCombatScreen isCombatStarted={screen === 'combat'} onStartCombat={() => navigate('combat')} />
   if (screen === 'auth') return <AuthScreen autoContinue onBack={() => window.history.back()} onContinue={() => navigate('home', true)} />
   if (screen === 'profile') return <AuthScreen onBack={() => window.history.back()} onContinue={() => window.history.back()} />
-  if (screen === 'home' || screen === 'combatants') return <CombatantsProvider key={firebaseAuth().currentUser?.uid}>{screen === 'home' ? <HomeScreen onCombatants={() => navigate('combatants')} onProfile={() => navigate('profile')} onSignOut={() => { void signOut(firebaseAuth()).then(() => navigate('welcome', true)) }} /> : <SavedCombatantsScreen onBack={() => window.history.back()} />}</CombatantsProvider>
+  if (screen === 'home' || screen === 'combatants' || screen === 'combats') return <CombatantsProvider key={firebaseAuth().currentUser?.uid}>{screen === 'home' ? <HomeScreen onCombatants={() => navigate('combatants')} onCombats={() => navigate('combats')} onProfile={() => navigate('profile')} onSignOut={() => { void signOut(firebaseAuth()).then(() => navigate('welcome', true)) }} /> : screen === 'combatants' ? <SavedCombatantsScreen onBack={() => window.history.back()} /> : <SavedCombatsScreen onBack={() => window.history.back()} />}</CombatantsProvider>
   return <WelcomeScreen onContinueOffline={() => navigate('offline')} onOpenAuth={() => navigate('auth')} />
 }
 export default App

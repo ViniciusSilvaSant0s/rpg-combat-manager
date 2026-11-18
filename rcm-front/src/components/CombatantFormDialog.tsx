@@ -20,9 +20,10 @@ type CombatantFormDialogProps = {
   onClose: () => void
   onSave: (combatant: CombatantInput) => void
   returnFocusTo: HTMLElement | null
+  temporaryOnly?: boolean
 }
 
-function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo }: CombatantFormDialogProps) {
+function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo, temporaryOnly = false }: CombatantFormDialogProps) {
   const [initiative, setInitiative] = useState(String(combatant?.initiative ?? ''))
   const [naturalInitiative, setNaturalInitiative] = useState<1 | 20 | null>(combatant?.naturalInitiative ?? null)
   const [type, setType] = useState<CombatantType>(combatant?.type ?? 'player')
@@ -139,7 +140,7 @@ function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo }: Comb
           </h2>
           {error ? <p className="m-0 text-[#f08a8a]" role="alert">{error}</p> : null}
 
-          <div aria-label="Tipo" className="grid grid-cols-2" role="radiogroup">
+          <div aria-label="Tipo" className={temporaryOnly ? 'hidden' : 'grid grid-cols-2'} role="radiogroup">
             <button
               aria-checked={type === 'player'}
               className={`min-h-11 border border-[rgba(211,173,103,0.55)] bg-[rgba(58,42,27,0.8)] px-3 py-2 font-bold text-[#d6c4a2] transition focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-[#f8df9d] ${type === 'player' ? 'rounded-l-sm border-[#f3d38a] bg-linear-to-br from-[#d5a951] to-[#a8742c] text-[#26180b]' : 'rounded-l-sm'}`}
@@ -163,7 +164,7 @@ function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo }: Comb
           </div>
           <label className="grid gap-1.5 text-sm font-semibold">
             Nome
-            <input className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 font-normal text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]" defaultValue={combatant?.name} name="name" required type="text" />
+            <input className="min-h-10 border border-[#8a6a38] bg-[#100c09] px-2 font-normal text-inherit focus-visible:outline-3 focus-visible:outline-[#f8df9d]" defaultValue={combatant?.name} name="name" readOnly={temporaryOnly} required type="text" />
           </label>
           <fieldset className="m-0 min-w-0 border-0 p-0">
             <legend className="mb-1.5 p-0 font-semibold"><CombatIcon name="heart" />PV (Pontos de Vida)</legend>
@@ -190,6 +191,7 @@ function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo }: Comb
                 defaultValue={combatant?.maximumHitPoints}
                 id="maximum-hit-points"
                 name="maximumHitPoints"
+                readOnly={temporaryOnly}
                 placeholder="vida máxima"
                 required
                 step="1"
@@ -218,6 +220,7 @@ function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo }: Comb
               defaultValue={combatant?.armorClass}
               min="0"
               name="armorClass"
+              readOnly={temporaryOnly}
               required
               step="1"
               type="number"
@@ -260,7 +263,7 @@ function CombatantFormDialog({ combatant, onClose, onSave, returnFocusTo }: Comb
             }}>Adicionar Condição / Bônus</PixelCornerFrame>
             <ConditionList conditionIds={conditionIds} onRemove={(id) => setConditionIds((ids) => ids.filter((entry) => entry !== id))} />
           </fieldset>
-          <fieldset className="m-0 min-w-0 border-0 p-0">
+          <fieldset className={temporaryOnly ? 'hidden' : 'm-0 min-w-0 border-0 p-0'}>
             <legend className="mb-1.5 font-semibold">Personagem</legend>
             <PixelCornerFrame as="button" className="min-h-11 cursor-pointer border border-[rgba(211,173,103,0.62)] bg-[rgba(93,67,39,0.72)] px-4 py-2 font-bold text-[#f3dfb4] hover:border-[#e4bc6e] hover:bg-[rgba(124,91,51,0.85)] focus-visible:outline-3 focus-visible:outline-[#f8df9d] focus-visible:outline-offset-2" onClick={(event) => {
               event.currentTarget.focus()

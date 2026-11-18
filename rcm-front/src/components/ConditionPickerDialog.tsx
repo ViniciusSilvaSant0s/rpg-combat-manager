@@ -30,7 +30,7 @@ export function ConditionDialog({ title, onClose, children, returnFocusTo }: {
           onClose()
         }
         if (event.key !== 'Tab') return
-        const buttons = Array.from(reference.current?.querySelectorAll<HTMLElement>('button, input') ?? [])
+        const buttons = Array.from(reference.current?.querySelectorAll<HTMLElement>('button, input, textarea, select') ?? [])
           .filter((element) => !element.matches(':disabled'))
         const first = buttons[0]
         const last = buttons.at(-1)

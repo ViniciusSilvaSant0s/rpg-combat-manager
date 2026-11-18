@@ -4,6 +4,11 @@ import type { Identity } from '../src/models/profile.js';
 import { createApp } from '../src/app.js';
 
 describe('combatants API', () => {
+  it('returns the number of distinct combats using a combatant', async () => {
+    const combatants: any = { hasProfile: async () => true, countCombats: async () => 2 };
+    const app = createApp({ verify: async token => ({ uid: token }), profiles: {} as any, combatants });
+    expect((await request(app).get('/combatants/3/combats/count').set('Authorization', 'Bearer alice')).body).toEqual({ count: 2 });
+  });
   it('requires authentication and isolates records between accounts', async () => {
     const records = new Map<string, any[]>();
     const combatants = {

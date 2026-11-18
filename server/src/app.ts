@@ -11,8 +11,13 @@ import type { Combatants } from './models/combatant.js';
 import { createCombatantsService } from './services/combatants.js';
 import { createCombatantsController } from './controllers/combatants.js';
 import { combatantsRouter } from './routes/combatants.js';
+import { combats as defaultCombats } from './repositories/combats.js';
+import type { Combats } from './models/combat.js';
+import { createCombatsService } from './services/combats.js';
+import { createCombatsController } from './controllers/combats.js';
+import { combatsRouter } from './routes/combats.js';
 
-export function createApp(deps: { verify: (token: string) => Promise<Identity>; profiles: Profiles; combatants?: Combatants }) {
+export function createApp(deps: { verify: (token: string) => Promise<Identity>; profiles: Profiles; combatants?: Combatants; combats?: Combats }) {
   const app = express();
   app.use(express.json());
   app.get('/health', (_request, response) => { response.json({ status: 'ok' }); });
@@ -22,6 +27,7 @@ export function createApp(deps: { verify: (token: string) => Promise<Identity>; 
   const combatantsService = createCombatantsService(deps.combatants ?? defaultCombatants);
   const combatantsController = createCombatantsController(combatantsService);
   app.use('/combatants', combatantsRouter(authenticate(deps.verify), combatantsController));
+  app.use('/combats', combatsRouter(authenticate(deps.verify), createCombatsController(createCombatsService(deps.combats ?? defaultCombats))));
   app.use((_request, response) => { response.status(404).json({ error: 'Not found' }); });
   return app;
 }

@@ -37,16 +37,15 @@ depois que o health check da API estiver saudável.
 
 ### Frontend
 
-O frontend usa React e Vite. A aplicação oferece acesso offline e autenticação
-Firebase, com cadastro e edição de perfil pela API. Os dados de combate
-continuam locais.
+O frontend usa React e Vite. A aplicação oferece combate rápido offline e acesso
+autenticado por Firebase, com perfil, fichas e combates persistidos pela API.
 
 ### API
 
 A API usa Express. Ela disponibiliza `GET /health`, que responde
 `{ "status": "ok" }`, e responde `404` com `{ "error": "Not found" }` para
-rotas não encontradas. A API valida tokens Firebase e persiste perfis no Oracle;
-ainda não implementa regras de negócio de combate.
+rotas não encontradas. A API valida tokens Firebase e persiste perfis, fichas e
+combates no Oracle.
 
 ## Arquitetura de evolução
 
@@ -160,6 +159,13 @@ o perfil no Oracle por node-oracledb Thin. O cadastro exige perfil com nickname
 e data de nascimento; para senha, também exige e-mail verificado. A API fornece
 GET, POST e PATCH em `/profile` para o próprio usuário. O health check não
 verifica as dependências externas.
+
+Combates autenticados são persistidos por usuário com participações independentes
+das fichas. Cada alteração é salva com uma versão para detectar alterações
+concorrentes; conflitos devem ser resolvidos carregando o estado mais recente.
+O histórico de desfazer permanece somente na memória da sessão. Ao reduzir a
+vida máxima da ficha, o excesso de vida atual de cada participação é somado à
+vida adicional. A exclusão da ficha remove suas participações vinculadas.
 
 As migrations SQL são executadas manualmente pelo contêiner Flyway. O índice
 do UID é único, o nickname tem índice único sem distinção de caixa e o e-mail

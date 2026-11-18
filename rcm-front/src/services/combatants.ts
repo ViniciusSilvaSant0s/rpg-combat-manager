@@ -16,6 +16,10 @@ async function read<T>(response: Response): Promise<T> {
 }
 
 export const combatantsService = {
+  async countCombats(id: number): Promise<number> {
+    const result = await read<{ count: number }>(await api.get(`/combatants/${id}/combats/count`, await token()))
+    return result.count
+  },
   async list(): Promise<SavedCombatant[]> {
     return read(await api.get('/combatants', await token()))
   },

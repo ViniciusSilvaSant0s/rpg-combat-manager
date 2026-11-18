@@ -19,6 +19,43 @@ Table app_users {
   }
 }
 
+Table combats {
+  id number [pk, increment]
+  user_id number [not null, ref: > app_users.id]
+  title "varchar2(255 char)" [not null]
+  description "varchar2(4000 char)"
+  started "number(1)" [not null, default: 0]
+  current_participant_id number [note: 'Participação da vez no próprio combate; pode ser nula.']
+  version number [not null, default: 1]
+  created_at "timestamp with time zone" [not null, default: `SYSTIMESTAMP`]
+  updated_at "timestamp with time zone" [not null, default: `SYSTIMESTAMP`]
+  indexes { user_id [name: 'combats_user_id_ix'] }
+}
+
+Table combat_participants {
+  id number [pk, increment]
+  combat_id number [not null, ref: > combats.id]
+  combatant_id number [not null, ref: > combatants.id]
+  position number [not null, note: 'Ordem de inclusão, preservada para desempates de iniciativa.']
+  current_hit_points "number(10)" [not null]
+  additional_hit_points "number(16)" [note: 'Limitado ao maior inteiro seguro do JavaScript.']
+  initiative "number(10)"
+  natural_initiative "number(2)"
+  indexes {
+    (combat_id, id) [unique, name: 'combat_participants_combat_id_uk']
+    combat_id [name: 'combat_participants_combat_ix']
+    combatant_id [name: 'combat_participants_combatant_ix']
+  }
+}
+
+Table combat_participant_conditions {
+  participant_id number [not null, ref: > combat_participants.id]
+  condition_id "varchar2(64 char)" [not null]
+  indexes { (participant_id, condition_id) [pk, name: 'combat_participant_conditions_pk'] }
+}
+
+Ref: combats.(id, current_participant_id) > combat_participants.(combat_id, id)
+
 Table combatants {
   id number [pk, increment]
   user_id number [not null, ref: > app_users.id]

@@ -40,6 +40,19 @@ test('keeps the edit form open when saving fails', async () => {
   expect(within(dialog).getByLabelText('Nome')).toHaveValue('Orin alterado')
 })
 
+test('explains health changes and counts linked combats before deletion', async () => {
+  const item = { id: 2, name: 'Orin', type: 'npc', characterId: null, maximumHitPoints: 10, armorClass: 12 }
+  vi.stubGlobal('fetch', vi.fn(async (url) => ({ ok: true, status: 200, json: async () => String(url).endsWith('/combats/count') ? { count: 2 } : [item] })))
+  render(<CombatantsProvider><SavedCombatantsScreen onBack={() => {}} /></CombatantsProvider>)
+  await screen.findByText('Orin')
+  fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
+  fireEvent.change(screen.getByLabelText('Vida máxima'), { target: { value: '8' } })
+  expect(screen.getByText(/exceder o novo máximo será somada à vida adicional/i)).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Excluir' }))
+  expect(await screen.findByText(/está em 2 combates/i)).toBeInTheDocument()
+})
+
 test('reuses loaded combatants when leaving and returning to the screen', async () => {
   const fetchMock = vi.fn(async () => ({ ok: true, status: 200, json: async () => [{ id: 1, name: 'Aria', type: 'player', characterId: null, maximumHitPoints: 12, armorClass: 15 }] }))
   vi.stubGlobal('fetch', fetchMock)
