@@ -50,3 +50,45 @@ test('history does not restore private screens after signing out', async () => {
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Prepare o combate' })).toBeInTheDocument())
   expect(screen.queryByRole('heading', { name: 'Meus combatentes' })).not.toBeInTheDocument()
 })
+
+test('acesso direto carrega o combate pelo identificador', async () => {
+  window.history.replaceState(null, '', '/combates/42')
+  const combat = { id: 42, title: 'Castelo', description: null, started: false, version: 1, currentParticipantId: null, participants: [] }
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => ({ ok: true, status: 200, json: async () => url.endsWith('/combats/42') ? combat : [] })))
+  render(<App />)
+  expect(await screen.findByRole('heading', { name: 'Preparar combate' })).toBeInTheDocument()
+  expect(screen.getByDisplayValue('Castelo')).toBeInTheDocument()
+})
+
+test('combate inexistente mostra erro e oferece retorno', async () => {
+  window.history.replaceState(null, '', '/combates/999')
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => ({ ok: !url.endsWith('/combats/999'), status: url.endsWith('/combats/999') ? 404 : 200, json: async () => [] })))
+  render(<App />)
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível carregar o combate')
+  fireEvent.click(screen.getByRole('button', { name: /Meus combates/ }))
+  expect(await screen.findByRole('heading', { name: 'Meus combates' })).toBeInTheDocument()
+})
+
+test('URL de combate não inicia um combate ainda não iniciado', async () => {
+  window.history.replaceState(null, '', '/combates/42/combate')
+  const combat = { id: 42, title: 'Castelo', description: null, started: false, version: 1, currentParticipantId: null, participants: [] }
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => ({ ok: true, status: 200, json: async () => url.endsWith('/combats/42') ? combat : [] })))
+  render(<App />)
+  expect(await screen.findByRole('alert')).toHaveTextContent('Inicie o combate')
+  await waitFor(() => expect(window.location.pathname).toBe('/combates/42'))
+})
+
+test('bloqueia saída de combate enquanto uma alteração está sendo salva', async () => {
+  window.history.replaceState(null, '', '/combates/42')
+  const combat = { id: 42, title: 'Castelo', description: null, started: false, version: 1, currentParticipantId: null, participants: [] }
+  vi.stubGlobal('fetch', vi.fn(async (url: string, options?: RequestInit) => {
+    if (options?.method === 'PUT') return new Promise(() => {})
+    return { ok: true, status: 200, json: async () => url.endsWith('/combats/42') ? combat : [] }
+  }))
+  render(<App />)
+  const title = await screen.findByDisplayValue('Castelo')
+  fireEvent.change(title, { target: { value: 'Fortaleza' } })
+  fireEvent.click(screen.getByRole('button', { name: /Meus combates/ }))
+  expect(screen.getByText('Aguarde o salvamento ou resolva a falha antes de sair.')).toBeInTheDocument()
+  expect(window.location.pathname).toBe('/combates/42')
+})

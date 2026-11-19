@@ -48,3 +48,5 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+Para hospedagem em produção, configure o servidor para retornar `index.html` ao acessar diretamente rotas do frontend (por exemplo, `/combates/123`). Preserve o encaminhamento de `/api` ao backend; ele não deve usar esse fallback.

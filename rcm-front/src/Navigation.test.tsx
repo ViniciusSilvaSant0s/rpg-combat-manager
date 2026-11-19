@@ -29,3 +29,9 @@ test('browser back returns from combat to the combatant list', async () => {
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Combate rápido' })).toBeInTheDocument())
   expect(screen.getByRole('heading', { name: 'Aria' })).toBeInTheDocument()
 })
+
+test('abre a preparação offline diretamente pela URL', () => {
+  window.history.replaceState(null, '', '/offline')
+  render(<App />)
+  expect(screen.getByRole('heading', { name: 'Combate rápido' })).toBeInTheDocument()
+})
