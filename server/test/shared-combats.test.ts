@@ -14,26 +14,43 @@ function signal() {
 
 // Model the shared profile lock. A missing or late lock allows the second transaction
 // to observe stale authorization. The SQL and bind checks also verify which pair shares it.
-it.each(['save', 'unfriend'] as const)('retains no shared participant when %s acquires the profile first', async first => {
+it.each([
+  ['save', 'alice', 1, 'bob', 2], ['unfriend', 'alice', 1, 'bob', 2],
+  ['save', 'bob', 2, 'alice', 1], ['unfriend', 'bob', 2, 'alice', 1],
+] as const)('retains no shared participant with %s first and %s saving', async (first, saver, saverId, remover, removerId) => {
   const locked = signal();
   const waiting = signal();
   const proceed = signal();
-  const release = signal();
-  let owner: number | null = null;
+  const profileLocks = new Map<number, ReturnType<typeof signal>>();
   let connected = 0;
   let friends = true;
   let hasParticipant = true;
   let version = 1;
   getConnection.mockImplementation(async () => {
     const id = ++connected;
+    const held = new Map<number, ReturnType<typeof signal>>();
     return {
       async execute(sql: string, binds: Record<string, unknown>) {
-        if (/FROM app_users\s+WHERE firebase_uid.*FOR UPDATE/s.test(sql) && !sql.includes('JOIN')) {
-          expect(binds.firebaseUid).toBe('alice');
-          if (owner !== null) { waiting.open(); await release.wait; }
-          owner = id;
+        const pairLock = sql.includes('AS is_actor') && sql.includes('FOR UPDATE');
+        if (pairLock || sql.includes('FOR UPDATE OF u.id')) {
+          const actor = binds.firebaseUid === 'alice' ? 1 : 2;
+          expect(binds.firebaseUid).toBe(pairLock ? remover : saver);
+          const ids = [actor];
+          if (pairLock) {
+            expect(sql).toMatch(/OR id = :targetId ORDER BY id FOR UPDATE/);
+            expect(binds.targetId).toBe(saverId);
+            ids.push(Number(binds.targetId));
+            ids.sort((a, b) => a - b);
+          }
+          for (const profile of ids) {
+            const prior = profileLocks.get(profile);
+            if (prior) { waiting.open(); await prior.wait; }
+            const release = signal();
+            profileLocks.set(profile, release);
+            held.set(profile, release);
+          }
           if (id === 1) { locked.open(); await proceed.wait; }
-          return { rows: [{ ID: 1, IS_ACTOR: 1 }, { ID: 2, IS_ACTOR: 0 }] };
+          return { rows: pairLock ? ids.map(ID => ({ ID, IS_ACTOR: Number(ID === removerId) })) : [{ VERSION: version }] };
         }
         if (sql.includes('SELECT sender_id')) return { rows: [{ STATUS: 'accepted', SENDER_ID: 1 }] };
         if (sql.includes('SELECT s.maximum_hit_points')) {
@@ -54,16 +71,20 @@ it.each(['save', 'unfriend'] as const)('retains no shared participant when %s ac
         return {};
       },
       commit: async () => {},
-      close: async () => { if (owner === id) { owner = null; release.open(); } },
+      close: async () => {
+        for (const [profile, release] of held) {
+          profileLocks.delete(profile);
+          release.open();
+        }
+      },
       rollback: async () => {},
     };
   });
-  const identity = { uid: 'alice' };
-  const save = () => combats.update(identity, 7, {
+  const save = () => combats.update({ uid: saver }, 7, {
     title: 'Floresta', description: null, started: true, currentParticipantId: 9, version: 1,
     participants: [{ id: 9, combatantId: 5, currentHitPoints: 9, additionalHitPoints: 1, initiative: 10, naturalInitiative: null, conditions: [] }],
   });
-  const unfriend = () => createFriendshipsService(friendships).act(identity, 2, 'remove');
+  const unfriend = () => createFriendshipsService(friendships).act({ uid: remover }, saverId, 'remove');
   const a = first === 'save' ? save() : unfriend();
   await locked.wait;
   const b = first === 'save' ? unfriend() : save();

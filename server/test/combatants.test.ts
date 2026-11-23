@@ -51,3 +51,12 @@ describe('combatants API', () => {
     expect((await request(app).delete('/combatants/1').set('Authorization', token)).status).toBe(500);
   });
 });
+
+it('reports a health transfer beyond the safe integer range as a conflict', async () => {
+  const combatants: any = { hasProfile: async () => true, update: async () => 'health-overflow' };
+  const app = createApp({ verify: async uid => ({ uid }), profiles: {} as any, combatants });
+  const response = await request(app).put('/combatants/4').set('Authorization', 'Bearer alice')
+    .send({ name: 'Aria', type: 'player', characterId: null, maximumHitPoints: 8, armorClass: 10 });
+  expect(response.status).toBe(409);
+  expect(response.body.error).toContain('limite de vida adicional');
+});

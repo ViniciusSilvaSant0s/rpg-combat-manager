@@ -47,6 +47,10 @@ export function createCombatantsController(service: CombatantsService): {
       try {
         const item = await service.update(res.locals.identity, id, input);
         if (!item) { res.sendStatus(404); return; }
+        if (item === 'health-overflow') {
+          res.status(409).json({ error: 'A redução da vida máxima excederia o limite de vida adicional em combate.' });
+          return;
+        }
         res.json(item);
       } catch { res.status(500).json({ error: 'Não foi possível salvar.' }); }
     },

@@ -18,6 +18,7 @@ it('uses Oracle-compatible bind names for every combatant operation', async () =
   mock.getConnection.mockResolvedValue({ execute: mock.execute, close: mock.close, commit: mock.commit, rollback: mock.rollback });
   mock.execute.mockImplementation(async (sql: string) => {
     if (/:uid\b/i.test(sql)) throw new Error('ORA-01745');
+    if (sql.includes(':safeMaximum')) return { rows: [] };
     return { rows: [{ ID: null }], rowsAffected: 1, outBinds: { outId: [1] } };
   });
   const input = { name: 'Aria', type: 'player' as const, characterId: null, maximumHitPoints: 10, armorClass: 12 };
@@ -39,7 +40,7 @@ it('updates the sheet and adjusts all excess current health in the same transact
   mock.getConnection.mockResolvedValue({ execute: mock.execute, close: mock.close, commit: mock.commit, rollback: mock.rollback });
   mock.execute.mockResolvedValue({ rowsAffected: 1 });
   await combatants.update({ uid: 'alice' }, 4, { name: 'Aria', type: 'player', characterId: null, maximumHitPoints: 10, armorClass: 15 });
-  const update = mock.execute.mock.calls.find(([sql]: [string]) => sql.includes('NVL(additional_hit_points'));
+  const update = mock.execute.mock.calls.find(([sql]: [string]) => sql.includes('SET additional_hit_points'));
   expect(update?.[1]).toEqual({ id: 4, maximumHitPoints: 10 });
   expect(update?.[0]).toContain('NVL(additional_hit_points, 0) + current_hit_points - :maximumHitPoints');
   expect(mock.commit).toHaveBeenCalledOnce();
@@ -81,5 +82,18 @@ it('restricts editing, deletion and combat counts to the owner', async () => {
     expect(sql).toContain('user_id = (SELECT id FROM app_users WHERE firebase_uid = :firebaseUid)');
     expect(binds).toMatchObject({ id: 4, firebaseUid: 'friend' });
   }
+  expect(mock.commit).not.toHaveBeenCalled();
+});
+
+it('rolls back the complete sheet edit when transferring hit points would overflow', async () => {
+  mock.execute.mockReset(); mock.commit.mockReset(); mock.rollback.mockReset();
+  mock.getConnection.mockResolvedValue(mock);
+  mock.execute.mockResolvedValueOnce({ rowsAffected: 1 }).mockResolvedValueOnce({ rows: [[7]] })
+    .mockResolvedValueOnce({ rows: [[1]] });
+  const input = { name: 'Aria', type: 'player' as const, characterId: null, maximumHitPoints: 8, armorClass: 10 };
+  await expect(combatants.update({ uid: 'alice' }, 4, input)).resolves.toBe('health-overflow');
+  expect(mock.execute.mock.calls[2][0]).toContain('NVL(additional_hit_points, 0) + current_hit_points - :maximumHitPoints > :safeMaximum');
+  expect(mock.execute.mock.calls[2][1]).toEqual({ id: 4, maximumHitPoints: 8, safeMaximum: Number.MAX_SAFE_INTEGER });
+  expect(mock.rollback).toHaveBeenCalledOnce();
   expect(mock.commit).not.toHaveBeenCalled();
 });

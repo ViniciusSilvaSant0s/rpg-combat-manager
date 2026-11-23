@@ -60,6 +60,14 @@ export const combatants: Combatants = {
       await connection.execute(`SELECT c.id FROM combats c WHERE c.id IN
         (SELECT p.combat_id FROM combat_participants p WHERE p.combatant_id = :id)
         ORDER BY c.id FOR UPDATE OF c.version`, { id });
+      const overflow = await connection.execute(`SELECT 1 FROM combat_participants
+        WHERE combatant_id = :id AND current_hit_points > :maximumHitPoints
+        AND NVL(additional_hit_points, 0) + current_hit_points - :maximumHitPoints > :safeMaximum
+        FETCH FIRST 1 ROW ONLY`, { id, maximumHitPoints: input.maximumHitPoints, safeMaximum: Number.MAX_SAFE_INTEGER });
+      if (overflow.rows?.length) {
+        await connection.rollback();
+        return 'health-overflow';
+      }
       await connection.execute(`UPDATE combats SET version = version + 1, updated_at = SYSTIMESTAMP WHERE id IN (SELECT combat_id FROM combat_participants WHERE combatant_id = :id)`, { id });
       await connection.execute(`UPDATE combat_participants SET additional_hit_points = NVL(additional_hit_points, 0) + current_hit_points - :maximumHitPoints, current_hit_points = :maximumHitPoints WHERE combatant_id = :id AND current_hit_points > :maximumHitPoints`, { id, maximumHitPoints: input.maximumHitPoints });
       await connection.commit();

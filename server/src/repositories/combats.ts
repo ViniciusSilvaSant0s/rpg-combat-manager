@@ -42,7 +42,13 @@ export const combats: Combats = {
   async update(identity, id, input: CombatState) {
     const connection = await getOracleConnection();
     try {
-      await connection.execute('SELECT id FROM app_users WHERE firebase_uid = :firebaseUid FOR UPDATE', { firebaseUid: identity.uid });
+      const versionQuery = `SELECT c.version FROM combats c JOIN app_users u ON u.id = c.user_id
+        WHERE c.id = :id AND u.firebase_uid = :firebaseUid`;
+      const binds = { id, firebaseUid: identity.uid };
+      const options = { outFormat: oracledb.OUT_FORMAT_OBJECT };
+      const initial = await connection.execute<{ VERSION: number }>(`${versionQuery} FOR UPDATE OF u.id`, binds, options);
+      if (!initial.rows?.length) return 'not-found';
+      if (initial.rows[0].VERSION !== input.version) return 'conflict';
       const maximumBySheet = new Map<number, number>();
       const sourceIds = [...new Set(input.participants.map(p => p.combatantId))].sort((a, b) => a - b);
       for (const combatantId of sourceIds) {
@@ -53,7 +59,7 @@ export const combats: Combats = {
         const sheet = sources.rows?.[0];
         if (sheet) maximumBySheet.set(combatantId, sheet.MAXIMUM_HIT_POINTS);
       }
-      const locked = await connection.execute<{ VERSION: number }>(`SELECT c.version FROM combats c JOIN app_users u ON u.id = c.user_id WHERE c.id = :id AND u.firebase_uid = :firebaseUid FOR UPDATE OF c.version`, { id, firebaseUid: identity.uid }, { outFormat: oracledb.OUT_FORMAT_OBJECT });
+      const locked = await connection.execute<{ VERSION: number }>(`${versionQuery} FOR UPDATE OF c.version`, binds, options);
       if (!locked.rows?.length) return 'not-found';
       if (locked.rows[0].VERSION !== input.version) return 'conflict';
       if (input.participants.some(p => !maximumBySheet.has(p.combatantId) || p.currentHitPoints > maximumBySheet.get(p.combatantId)!)) {
