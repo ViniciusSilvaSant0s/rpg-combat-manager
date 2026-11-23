@@ -73,3 +73,20 @@ Table combatants {
     `armor_class >= 0`
   }
 }
+
+Table friendships {
+  low_id number [not null, ref: > app_users.id]
+  high_id number [not null, ref: > app_users.id]
+  sender_id number [not null, ref: > app_users.id]
+  status "varchar2(8 char)" [not null]
+  indexes {
+    (low_id, high_id) [pk, name: 'friendships_pk']
+    high_id [name: 'friendships_high_ix']
+    sender_id [name: 'friendships_sender_ix']
+  }
+  checks {
+    `low_id < high_id` [name: 'friendships_order_ck']
+    `sender_id IN (low_id, high_id)` [name: 'friendships_sender_ck']
+    `status IN ('pending', 'accepted')` [name: 'friendships_status_ck']
+  }
+}

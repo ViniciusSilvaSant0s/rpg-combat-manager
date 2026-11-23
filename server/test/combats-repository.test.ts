@@ -7,10 +7,10 @@ import { combats } from '../src/repositories/combats.js';
 it('rejects stale writes without modifying combat state', async () => {
   mock.execute.mockReset(); mock.commit.mockReset(); mock.close.mockReset();
   mock.getConnection.mockResolvedValue(mock);
-  mock.execute.mockResolvedValueOnce({ rows: [{ VERSION: 2 }] });
+  mock.execute.mockResolvedValueOnce({}).mockResolvedValueOnce({ rows: [{ VERSION: 2 }] });
   const result = await combats.update({ uid: 'alice' }, 1, { title: 'Combate', description: null, started: false, currentParticipantId: null, version: 1, participants: [] });
   expect(result).toBe('conflict');
-  expect(mock.execute).toHaveBeenCalledOnce();
+  expect(mock.execute).toHaveBeenCalledTimes(2);
   expect(mock.commit).not.toHaveBeenCalled();
   expect(mock.close).toHaveBeenCalledOnce();
 });
@@ -18,7 +18,7 @@ it('rejects stale writes without modifying combat state', async () => {
 it('rolls back all writes if saving a participant fails', async () => {
   mock.execute.mockReset(); mock.commit.mockReset(); mock.rollback.mockReset();
   mock.getConnection.mockResolvedValue(mock);
-  mock.execute.mockResolvedValueOnce({ rows: [{ VERSION: 1 }] }).mockResolvedValueOnce({ rows: [{ MAXIMUM_HIT_POINTS: 10 }] }).mockResolvedValueOnce({}).mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('failure'));
+  mock.execute.mockResolvedValueOnce({}).mockResolvedValueOnce({ rows: [{ MAXIMUM_HIT_POINTS: 10 }] }).mockResolvedValueOnce({ rows: [{ VERSION: 1 }] }).mockResolvedValueOnce({}).mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('failure'));
   const participant = { id: 5, combatantId: 4, currentHitPoints: 10, additionalHitPoints: null, initiative: null, naturalInitiative: null, conditions: [] };
   await expect(combats.update({ uid: 'alice' }, 1, { title: 'Combate', description: null, started: false, currentParticipantId: null, version: 1, participants: [participant] })).rejects.toThrow('failure');
   expect(mock.rollback).toHaveBeenCalledOnce();
@@ -34,12 +34,14 @@ it('reads combat and participants in a read-only transaction', async () => {
   expect(combat).toMatchObject({ version: 4, currentParticipantId: 3, participants: [{ currentHitPoints: 5, additionalHitPoints: 2, conditions: ['blinded'] }] });
 });
 
-it('rejects a combatant that does not belong to the authenticated user', async () => {
+it('rejects a combatant that is unavailable to the authenticated user', async () => {
   mock.execute.mockReset(); mock.commit.mockReset();
   mock.getConnection.mockResolvedValue(mock);
-  mock.execute.mockResolvedValueOnce({ rows: [{ VERSION: 1 }] }).mockResolvedValueOnce({ rows: [] });
+  mock.execute.mockResolvedValueOnce({}).mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [{ VERSION: 1 }] });
   const p = { id: 5, combatantId: 4, currentHitPoints: 10, additionalHitPoints: null, initiative: null, naturalInitiative: null, conditions: [] };
   await expect(combats.update({ uid: 'bob' }, 1, { title: 'Combate', description: null, started: false, currentParticipantId: null, version: 1, participants: [p] })).resolves.toBe('invalid-participant');
-  expect(mock.execute).toHaveBeenCalledTimes(2);
+  expect(mock.execute).toHaveBeenCalledTimes(3);
+  expect(mock.execute.mock.calls[0][0]).toMatch(/app_users.*FOR UPDATE/);
+  expect(mock.execute.mock.calls[1][0]).toContain("f.status = 'accepted'");
   expect(mock.commit).not.toHaveBeenCalled();
 });

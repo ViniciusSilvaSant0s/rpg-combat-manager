@@ -3,6 +3,8 @@ import { getOracleConnection } from '../oracle-pool.js';
 import type { Combat, CombatState, Combats } from '../models/combat.js';
 import type { Identity } from '../models/profile.js';
 
+import { accessibleSheet } from './friendships.js';
+
 type CombatRow = { ID: number; TITLE: string; DESCRIPTION: string | null; STARTED: number; CURRENT_PARTICIPANT_ID: number | null; VERSION: number };
 type ParticipantRow = { ID: number; COMBATANT_ID: number; CURRENT_HIT_POINTS: number; ADDITIONAL_HIT_POINTS: number | null; INITIATIVE: number | null; NATURAL_INITIATIVE: 1 | 20 | null; CONDITION_ID: string | null };
 async function read(connection: oracledb.Connection, identity: Identity, id: number): Promise<Combat | null> {
@@ -40,12 +42,22 @@ export const combats: Combats = {
   async update(identity, id, input: CombatState) {
     const connection = await getOracleConnection();
     try {
+      await connection.execute('SELECT id FROM app_users WHERE firebase_uid = :firebaseUid FOR UPDATE', { firebaseUid: identity.uid });
+      const maximumBySheet = new Map<number, number>();
+      const sourceIds = [...new Set(input.participants.map(p => p.combatantId))].sort((a, b) => a - b);
+      for (const combatantId of sourceIds) {
+        const sources = await connection.execute<{ MAXIMUM_HIT_POINTS: number }>(`
+          SELECT s.maximum_hit_points FROM combatants s CROSS JOIN app_users actor
+          WHERE s.id = :combatantId AND actor.firebase_uid = :firebaseUid AND ${accessibleSheet('actor', 's')}
+          FOR UPDATE OF s.maximum_hit_points`, { combatantId, firebaseUid: identity.uid }, { outFormat: oracledb.OUT_FORMAT_OBJECT });
+        const sheet = sources.rows?.[0];
+        if (sheet) maximumBySheet.set(combatantId, sheet.MAXIMUM_HIT_POINTS);
+      }
       const locked = await connection.execute<{ VERSION: number }>(`SELECT c.version FROM combats c JOIN app_users u ON u.id = c.user_id WHERE c.id = :id AND u.firebase_uid = :firebaseUid FOR UPDATE OF c.version`, { id, firebaseUid: identity.uid }, { outFormat: oracledb.OUT_FORMAT_OBJECT });
       if (!locked.rows?.length) return 'not-found';
       if (locked.rows[0].VERSION !== input.version) return 'conflict';
-      for (const participant of input.participants) {
-        const owned = await connection.execute<{ MAXIMUM_HIT_POINTS: number }>(`SELECT maximum_hit_points FROM combatants WHERE id = :combatantId AND user_id = (SELECT id FROM app_users WHERE firebase_uid = :firebaseUid) FOR UPDATE`, { combatantId: participant.combatantId, firebaseUid: identity.uid }, { outFormat: oracledb.OUT_FORMAT_OBJECT });
-        if (!owned.rows?.length || participant.currentHitPoints > owned.rows[0].MAXIMUM_HIT_POINTS) return 'invalid-participant';
+      if (input.participants.some(p => !maximumBySheet.has(p.combatantId) || p.currentHitPoints > maximumBySheet.get(p.combatantId)!)) {
+        return 'invalid-participant';
       }
       await connection.execute(`UPDATE combats SET current_participant_id = NULL WHERE id = :id`, { id });
       await connection.execute(`DELETE FROM combat_participants WHERE combat_id = :id`, { id });
