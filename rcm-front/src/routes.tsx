@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate, useLocation, useNavigate, useBlocker } f
 import QuickCombatScreen from './screens/QuickCombatScreen'
 import WelcomeScreen from './screens/WelcomeScreen'
 import AuthScreen from './screens/AuthScreen'
+import FriendsScreen from './screens/FriendsScreen'
 import HomeScreen from './screens/HomeScreen'
 import SavedCombatantsScreen from './screens/SavedCombatantsScreen'
 import SavedCombatsScreen from './screens/SavedCombatsScreen'
@@ -18,14 +19,14 @@ function PublicScreen({ page }: { page: 'welcome' | 'auth' | 'offline' }) {
   return <WelcomeScreen onContinueOffline={() => navigate('/offline')} onOpenAuth={() => navigate('/entrar')} />
 }
 
-function PrivateScreen({ page }: { page: 'home' | 'profile' | 'combatants' | 'combats' }) {
+function PrivateScreen({ page }: { page: 'home' | 'profile' | 'friends' | 'combatants' | 'combats' }) {
   const navigate = useNavigate()
   const [identity, setIdentity] = useState<string | null | undefined>(undefined)
   useEffect(() => onAuthStateChanged(firebaseAuth(), user => setIdentity(user?.uid ?? null)), [])
   if (identity === undefined) return <p>Carregando…</p>
   if (identity === null) return <Navigate to="/" replace />
   if (page === 'profile') return <AuthScreen onBack={() => navigate('/home')} onContinue={() => navigate('/home')} />
-  return <CombatantsProvider key={identity}>{page === 'home' ? <HomeScreen onCombatants={() => navigate('/combatentes')} onCombats={() => navigate('/combates')} onProfile={() => navigate('/perfil')} onSignOut={() => { void signOut(firebaseAuth()).then(() => navigate('/', { replace: true })) }} /> : page === 'combatants' ? <SavedCombatantsScreen onBack={() => navigate('/home')} /> : <RoutedCombats />}</CombatantsProvider>
+  return <CombatantsProvider key={identity}>{page === 'home' ? <HomeScreen onFriends={() => navigate('/amigos')} onCombatants={() => navigate('/combatentes')} onCombats={() => navigate('/combates')} onProfile={() => navigate('/perfil')} onSignOut={() => { void signOut(firebaseAuth()).then(() => navigate('/', { replace: true })) }} /> : page === 'friends' ? <FriendsScreen onBack={() => navigate('/home')} /> : page === 'combatants' ? <SavedCombatantsScreen onBack={() => navigate('/home')} /> : <RoutedCombats />}</CombatantsProvider>
 }
 
 function RoutedCombats() {
@@ -44,6 +45,7 @@ export function createAppRouter() {
     { path: '/offline', element: <PublicScreen page="offline" /> },
     { path: '/offline/combate', element: <PublicScreen page="offline" /> },
     { path: '/home', element: <PrivateScreen page="home" /> },
+    { path: '/amigos', element: <PrivateScreen page="friends" /> },
     { path: '/perfil', element: <PrivateScreen page="profile" /> },
     { path: '/combatentes', element: <PrivateScreen page="combatants" /> },
     { path: '/combates', element: <PrivateScreen page="combats" />, children: [

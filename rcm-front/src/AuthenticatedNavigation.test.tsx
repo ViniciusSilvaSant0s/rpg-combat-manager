@@ -92,3 +92,13 @@ test('bloqueia saída de combate enquanto uma alteração está sendo salva', as
   expect(screen.getByText('Aguarde o salvamento ou resolva a falha antes de sair.')).toBeInTheDocument()
   expect(window.location.pathname).toBe('/combates/42')
 })
+
+test('o card Amigos abre a tela autenticada de amizades', async () => {
+  window.history.replaceState(null, '', '/home')
+  vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ friends: [], received: [], sent: [] }) })))
+  render(<App />)
+  fireEvent.click(await screen.findByRole('button', { name: /amigos/i }))
+  expect(await screen.findByRole('heading', { name: 'Amigos', level: 1 })).toBeInTheDocument()
+  expect(window.location.pathname).toBe('/amigos')
+  expect(await screen.findByText('Você ainda não tem amigos.')).toBeInTheDocument()
+})

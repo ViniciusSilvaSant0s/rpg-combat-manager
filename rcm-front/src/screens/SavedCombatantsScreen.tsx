@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { combatantsService, type CombatantInput } from '../services/combatants'
+import { CombatantHealthConflict, combatantsService, type CombatantInput } from '../services/combatants'
 import CharacterPickerDialog from '../components/CharacterPickerDialog'
 import CharacterSprite from '../components/CharacterSprite'
 import CombatIcon from '../components/CombatIcon'
 import PixelCornerFrame from '../components/PixelCornerFrame'
+import { sheetOwnerLabel } from '../types/savedCombatant'
 import { useCombatants, type SavedCombatant } from '../combatantsContext'
 
 type Input = CombatantInput
@@ -24,6 +25,8 @@ export default function SavedCombatantsScreen({ onBack }: { onBack: () => void }
   const { items: cachedItems, setItems } = useCombatants()
   const hasInitialCache = useRef(cachedItems !== null)
   const items = cachedItems ?? []
+  const [filter, setFilter] = useState('all')
+  const visibleItems = items.filter(item => filter === 'all' || (filter === 'friends' ? item.isOwner === false : item.isOwner !== false))
   const [view, setView] = useState('cards')
   const [loading, setLoading] = useState(cachedItems === null)
   const [error, setError] = useState('')
@@ -36,22 +39,22 @@ export default function SavedCombatantsScreen({ onBack }: { onBack: () => void }
   const [retry, setRetry] = useState(0)
   useEffect(() => { if (hasInitialCache.current && retry === 0) return; let active = true; setLoading(true); setError(''); combatantsService.list().then(data => { if (active) setItems(data) }).catch(() => { if (active) setError('Não foi possível carregar seus combatentes.') }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [retry, setItems])
   function open(item: Combatant | null) { setEditing(item); setForm(item ? { name: item.name, type: item.type, characterId: item.characterId, maximumHitPoints: item.maximumHitPoints, armorClass: item.armorClass } : empty); setError('') }
-  async function save(event: FormEvent) { event.preventDefault(); if (pending) return; setPending(true); setError(''); try { const result = editing ? await combatantsService.update(editing.id, form) : await combatantsService.create(form); setItems(current => editing ? (current ?? []).map(item => item.id === result.id ? result : item) : [...(current ?? []), result]); setEditing(undefined) } catch { setError('Não foi possível salvar. Confira os dados e tente novamente.') } finally { setPending(false) } }
+  async function save(event: FormEvent) { event.preventDefault(); if (pending) return; setPending(true); setError(''); try { const result = editing ? await combatantsService.update(editing.id, form) : await combatantsService.create(form); setItems(current => editing ? (current ?? []).map(item => item.id === result.id ? { ...item, ...result } : item) : [...(current ?? []), result]); setEditing(undefined) } catch (reason) { setError(reason instanceof CombatantHealthConflict ? reason.message : 'Não foi possível salvar. Confira os dados e tente novamente.') } finally { setPending(false) } }
   async function remove() { if (!deleting || pending) return; setPending(true); setError(''); try { await combatantsService.remove(deleting.id); setItems(current => (current ?? []).filter(item => item.id !== deleting.id)); setDeleting(null) } catch { setError('Não foi possível excluir. Tente novamente.') } finally { setPending(false) } }
   async function openDelete(item: Combatant) { setError(''); setDeleting(item); setCombatCount(null); try { setCombatCount(await combatantsService.countCombats(item.id)) } catch { setError('Não foi possível consultar os combates vinculados.') } }
   return <main className="min-h-screen bg-[#160f0a] px-5 py-10 text-[#f5e4ba]"><div className="mx-auto max-w-5xl">
-    <button className={button} onClick={onBack}>← Home</button><div className="mt-8 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl text-[#f2d184]">Meus combatentes</h1><p className="mt-2 text-[#cbb995]">Suas fichas para novas aventuras.</p></div><button className={button} onClick={() => open(null)}>+ Criar combatente</button></div>
+    <button className={button} onClick={onBack}>← Home</button><div className="mt-8 flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl text-[#f2d184]">Meus combatentes</h1><p className="mt-2 text-[#cbb995]">Consulte suas fichas e as de seus amigos.</p></div><button className={button} onClick={() => open(null)}>+ Criar combatente</button></div>
     {error && <p role="alert" className="mt-4 text-[#ffaaa1]">{error}</p>}
-    <div className="mt-7 flex flex-wrap items-end gap-3"><label className="block w-48">Visualização<select className={field} value={view} onChange={e => setView(e.target.value)}><option value="cards">Cards</option><option value="list">Lista</option></select></label><button className={button} type="button" disabled={loading} onClick={() => setRetry(value => value + 1)}>Atualizar</button></div>
-    {loading ? <p role="status" className="mt-6">Carregando combatentes…</p> : error && !items.length ? <button className={`${button} mt-5`} onClick={() => setRetry(retry + 1)}>Tentar novamente</button> : !items.length ? <p className="mt-8">Você ainda não tem combatentes. Crie sua primeira ficha.</p> : <div className={view === 'cards' ? 'mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'mt-6 grid gap-3'}>
-      {items.map(item => <article key={item.id} className={`border border-[#806037] bg-[#2a1d13] p-5 ${view === 'list' ? 'flex flex-wrap items-center justify-between gap-4' : ''}`}>
+    <div className="mt-7 flex flex-wrap items-end gap-3"><label className="block w-48">Proprietário<select className={field} value={filter} onChange={e => setFilter(e.target.value)}><option value="all">Todos</option><option value="mine">Meus</option><option value="friends">De amigos</option></select></label><label className="block w-48">Visualização<select className={field} value={view} onChange={e => setView(e.target.value)}><option value="cards">Cards</option><option value="list">Lista</option></select></label><button className={button} type="button" disabled={loading} onClick={() => setRetry(value => value + 1)}>Atualizar</button></div>
+    {loading ? <p role="status" className="mt-6">Carregando combatentes…</p> : error && !items.length ? <button className={`${button} mt-5`} onClick={() => setRetry(retry + 1)}>Tentar novamente</button> : !visibleItems.length ? <p className="mt-8">{filter === 'friends' ? 'Nenhuma ficha de amigo disponível.' : 'Você ainda não tem combatentes. Crie sua primeira ficha.'}</p> : <div className={view === 'cards' ? 'mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'mt-6 grid gap-3'}>
+      {visibleItems.map(item => <article key={item.id} className={`border border-[#806037] bg-[#2a1d13] p-5 ${view === 'list' ? 'flex flex-wrap items-center justify-between gap-4' : ''}`}>
         <div className="flex min-w-0 items-center gap-3">
           {item.characterId && <CharacterSprite characterId={item.characterId} label={item.name} />}
-          <div className="min-w-0"><h2 className="break-words text-xl text-[#f2d184]">{item.name}</h2>
+          <div className="min-w-0"><h2 className="break-words text-xl text-[#f2d184]">{item.name}</h2><p className="text-sm text-[#d6c4a2]">{sheetOwnerLabel(item)}</p>
             {view === 'cards' ? <div><p>{item.type === 'player' ? 'Jogador' : 'NPC'}</p><p><CombatIcon name="heart" />PV {item.maximumHitPoints}</p><p><CombatIcon name="shield" />CA {item.armorClass}</p></div> : <p>{item.type === 'player' ? 'Jogador' : 'NPC'} · PV {item.maximumHitPoints} · CA {item.armorClass}</p>}
           </div>
         </div>
-        <div className={`flex gap-2 ${view === 'list' ? 'ml-auto' : 'mt-4'}`}><button className={button} onClick={() => open(item)}>Editar</button><button className={button} onClick={() => void openDelete(item)}>Excluir</button></div>
+        {item.isOwner !== false && <div className={`flex gap-2 ${view === 'list' ? 'ml-auto' : 'mt-4'}`}><button className={button} onClick={() => open(item)}>Editar</button><button className={button} onClick={() => void openDelete(item)}>Excluir</button></div>}
       </article>)}
     </div>}
     {editing !== undefined && (

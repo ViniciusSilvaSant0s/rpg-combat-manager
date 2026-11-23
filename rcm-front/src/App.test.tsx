@@ -13,14 +13,14 @@ import HomeScreen from './screens/HomeScreen'
 
 test('opens combatants from the home card', () => {
   let opened = false
-  render(<HomeScreen onCombatants={() => { opened = true }} onCombats={() => {}} onProfile={() => {}} onSignOut={() => {}} />)
+  render(<HomeScreen onFriends={() => {}} onCombatants={() => { opened = true }} onCombats={() => {}} onProfile={() => {}} onSignOut={() => {}} />)
   fireEvent.click(screen.getByRole('button', { name: /combatentes/i }))
   expect(opened).toBe(true)
 })
 
 test('opens saved combats from the home card', () => {
   let opened = false
-  render(<HomeScreen onCombatants={() => {}} onCombats={() => { opened = true }} onProfile={() => {}} onSignOut={() => {}} />)
+  render(<HomeScreen onFriends={() => {}} onCombatants={() => {}} onCombats={() => { opened = true }} onProfile={() => {}} onSignOut={() => {}} />)
   fireEvent.click(screen.getByRole('button', { name: /^combate\b/i }))
   expect(opened).toBe(true)
 })

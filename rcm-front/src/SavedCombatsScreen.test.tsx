@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import SavedCombatsScreen from './screens/SavedCombatsScreen'
 import CombatScreen from './screens/CombatScreen'
@@ -174,4 +174,83 @@ it('serializes rapid edits with the version returned by the previous save', asyn
   finishFirst?.({ ...combat, title: 'Primeiro', version: 2 })
   await waitFor(() => expect(combatsService.update).toHaveBeenCalledTimes(2))
   expect(vi.mocked(combatsService.update).mock.calls[1][0]).toMatchObject({ title: 'Segundo', version: 2 })
+})
+
+it('recarrega a participação e a lista de fichas após desfazer amizade', async () => {
+  const friend = { id: 4, name: 'Fênix', type: 'npc' as const, characterId: null, maximumHitPoints: 7, armorClass: 13, owner: { id: 2, nickname: 'Elfa' }, isOwner: false }
+  const combat = { id: 1, title: 'Ruínas', description: null, started: false, version: 1, currentParticipantId: null, participants: [] }
+  vi.mocked(combatsService.list).mockResolvedValue([combat])
+  vi.mocked(combatantsService.list).mockResolvedValueOnce([friend]).mockResolvedValue([])
+  vi.mocked(combatsService.update).mockRejectedValue(new CombatConflict())
+  vi.mocked(combatsService.get).mockResolvedValue({ ...combat, version: 2 })
+  render(<SavedCombatsScreen onBack={() => {}} />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Abrir' }))
+  fireEvent.click(screen.getByRole('button', { name: /adicionar combatente/i }))
+  fireEvent.click(screen.getByRole('button', { name: /Selecionar Fênix.*Ficha de Elfa/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar selecionados' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('outra sessão')
+  fireEvent.click(screen.getByRole('button', { name: 'Carregar versão salva' }))
+  await waitFor(() => expect(screen.queryByText('Fênix')).not.toBeInTheDocument())
+  expect(screen.getByRole('button', { name: 'Iniciar combate' })).toBeDisabled()
+  fireEvent.click(screen.getByRole('button', { name: /adicionar combatente/i }))
+  expect(screen.queryByRole('button', { name: /Ficha de Elfa/ })).not.toBeInTheDocument()
+})
+
+it('oferece recarga se a participação chegar sem sua ficha de origem', async () => {
+  const combat = { id: 1, title: 'Ruínas', description: null, started: true, version: 1, currentParticipantId: 2, participants: [
+    { id: 2, combatantId: 4, currentHitPoints: 7, initiative: null, naturalInitiative: null, additionalHitPoints: null, conditions: [] },
+  ] }
+  vi.mocked(combatsService.list).mockResolvedValue([combat])
+  vi.mocked(combatsService.get).mockResolvedValue({ ...combat, version: 2, participants: [], currentParticipantId: null })
+  render(<SavedCombatsScreen onBack={() => {}} />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Abrir' }))
+  expect(screen.getByRole('alert')).toHaveTextContent('deixou de estar disponível')
+  expect(screen.getByLabelText(/Título/)).toBeDisabled()
+  fireEvent.click(screen.getByRole('button', { name: 'Carregar versão atual' }))
+  await waitFor(() => expect(screen.getByLabelText(/Título/)).toBeEnabled())
+})
+
+it('ignora a resposta atrasada da lista após abrir a URL de um combate', async () => {
+  const sheet = { id: 4, name: 'Grifo', type: 'npc' as const, characterId: null, maximumHitPoints: 7, armorClass: 13 }
+  let finishList!: (sheets: typeof sheet[]) => void
+  vi.mocked(combatantsService.list).mockReturnValueOnce(new Promise(resolve => { finishList = resolve }))
+    .mockResolvedValueOnce([sheet])
+  vi.mocked(combatsService.get).mockResolvedValue({ id: 1, title: 'Castelo', description: null, started: false, version: 1, currentParticipantId: null,
+    participants: [{ id: 2, combatantId: 4, currentHitPoints: 7, additionalHitPoints: null, initiative: null, naturalInitiative: null, conditions: [] }] })
+  const route = { running: false, navigate: vi.fn(), setUnsafe: vi.fn() }
+  const screenView = render(<SavedCombatsScreen onBack={() => {}} route={route} />)
+  screenView.rerender(<SavedCombatsScreen onBack={() => {}} route={{ ...route, id: '1' }} />)
+  expect(await screen.findByText('Grifo')).toBeInTheDocument()
+  await act(async () => { finishList([]) })
+  expect(screen.getByText('Grifo')).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})
+
+it('consulta as fichas uma única vez na entrada direta por URL', async () => {
+  vi.mocked(combatsService.get).mockResolvedValue({ id: 1, title: 'Castelo', description: null, started: false, version: 1, currentParticipantId: null, participants: [] })
+  render(<SavedCombatsScreen onBack={() => {}} route={{ id: '1', running: false, navigate: vi.fn(), setUnsafe: vi.fn() }} />)
+  await screen.findByDisplayValue('Castelo')
+  expect(combatantsService.list).toHaveBeenCalledTimes(1)
+  expect(combatsService.list).not.toHaveBeenCalled()
+})
+
+it('carrega fichas para um combate criado enquanto a consulta da lista está pendente', async () => {
+  const sheet = { id: 4, name: 'Grifo', type: 'npc' as const, characterId: null, maximumHitPoints: 7, armorClass: 13 }
+  let finishList!: (sheets: typeof sheet[]) => void
+  vi.mocked(combatantsService.list).mockReturnValueOnce(new Promise(resolve => { finishList = resolve }))
+    .mockResolvedValueOnce([sheet])
+  const combat = { id: 1, title: 'Castelo', description: null, started: false, version: 1, currentParticipantId: null, participants: [] }
+  vi.mocked(combatsService.create).mockResolvedValue(combat)
+  vi.mocked(combatsService.get).mockResolvedValue(combat)
+  const route = { running: false, navigate: vi.fn(), setUnsafe: vi.fn() }
+  const view = render(<SavedCombatsScreen onBack={() => {}} route={route} />)
+  fireEvent.click(screen.getByRole('button', { name: /criar combate/i }))
+  fireEvent.change(screen.getByLabelText(/Título/), { target: { value: 'Castelo' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar combate' }))
+  await waitFor(() => expect(route.navigate).toHaveBeenCalledWith('/combates/1'))
+  view.rerender(<SavedCombatsScreen onBack={() => {}} route={{ ...route, id: '1' }} />)
+  await screen.findByDisplayValue('Castelo')
+  await act(async () => { finishList([]) })
+  fireEvent.click(screen.getByRole('button', { name: /adicionar combatente/i }))
+  expect(await screen.findByRole('button', { name: /Selecionar Grifo/ })).toBeInTheDocument()
 })

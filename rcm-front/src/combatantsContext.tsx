@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 
-export type SavedCombatant = { id: number; name: string; type: 'player' | 'npc'; characterId: string | null; maximumHitPoints: number; armorClass: number }
+import type { SavedCombatant } from './types/savedCombatant'
+export type { SavedCombatant } from './types/savedCombatant'
+
 type State = { items: SavedCombatant[] | null; setItems: Dispatch<SetStateAction<SavedCombatant[] | null>> }
 const CombatantsContext = createContext<State | null>(null)
 

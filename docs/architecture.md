@@ -171,3 +171,15 @@ As migrations SQL são executadas manualmente pelo contêiner Flyway. O índice
 do UID é único, o nickname tem índice único sem distinção de caixa e o e-mail
 tem índice próprio. A configuração Web do Firebase é pública no navegador;
 credenciais de banco e arquivos locais são ignorados pelo Git.
+
+### Amizades e fichas compartilhadas
+
+Usuários pesquisam outros perfis pelo nickname completo, sem distinção de caixa,
+e podem enviar solicitações de amizade. O destinatário pode aceitar ou recusar;
+o remetente pode cancelar. Solicitações cruzadas formam a amizade. Amigos podem
+visualizar e usar as fichas uns dos outros em combates; apenas o proprietário
+pode alterar ou excluir a ficha original. As participações mantêm seus dados de
+combate independentes. Ao desfazer uma amizade, as participações de fichas
+compartilhadas são removidas dos combates de ambos e as versões afetadas são
+atualizadas, permitindo detectar alterações concorrentes. A migration V4 deve
+ser aplicada manualmente pelo Flyway antes de utilizar a funcionalidade.

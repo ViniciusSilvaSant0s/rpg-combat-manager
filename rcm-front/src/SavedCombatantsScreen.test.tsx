@@ -69,3 +69,34 @@ test('reuses loaded combatants when leaving and returning to the screen', async 
   fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }))
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
 })
+
+test('filtra fichas pelo proprietário e reserva as ações ao dono', async () => {
+  const sheet = { id: 2, name: 'Orin', type: 'npc', characterId: null, maximumHitPoints: 10, armorClass: 12 }
+  const items = [{ ...sheet, owner: { id: 1, nickname: 'Mago' }, isOwner: true },
+    { ...sheet, id: 3, name: 'Grifo', owner: { id: 2, nickname: 'Elfa' }, isOwner: false }]
+  vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => items })))
+  render(<CombatantsProvider><SavedCombatantsScreen onBack={() => {}} /></CombatantsProvider>)
+  const friend = (await screen.findByText('Grifo')).closest('article')!
+  expect(friend).toHaveTextContent('Ficha de Elfa')
+  expect(within(friend).queryByRole('button')).not.toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Proprietário'), { target: { value: 'friends' } })
+  expect(screen.queryByText('Orin')).not.toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Proprietário'), { target: { value: 'mine' } })
+  expect(screen.queryByText('Grifo')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument()
+})
+
+test('explica conflito de vida adicional ao editar e preserva os dados do formulário', async () => {
+  const item = { id: 2, name: 'Orin', type: 'npc', characterId: null, maximumHitPoints: 10, armorClass: 12 }
+  const message = 'A redução da vida máxima excederia o limite de vida adicional em combate.'
+  vi.stubGlobal('fetch', vi.fn(async (_url, init) => init?.method === 'PUT'
+    ? { ok: false, status: 409, json: async () => ({ error: message }) }
+    : { ok: true, json: async () => [item] }))
+  render(<CombatantsProvider><SavedCombatantsScreen onBack={() => {}} /></CombatantsProvider>)
+  fireEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+  const dialog = within(screen.getByRole('dialog'))
+  fireEvent.change(dialog.getByLabelText('Vida máxima'), { target: { value: '8' } })
+  fireEvent.click(dialog.getByRole('button', { name: 'Salvar alterações' }))
+  expect(await dialog.findByRole('alert')).toHaveTextContent(message)
+  expect(dialog.getByLabelText('Vida máxima')).toHaveValue(8)
+})

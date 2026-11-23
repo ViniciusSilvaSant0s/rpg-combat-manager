@@ -2,7 +2,13 @@ import { firebaseAuth } from '../auth/firebase'
 import type { SavedCombatant } from '../combatantsContext'
 import { api } from './api'
 
-export type CombatantInput = Omit<SavedCombatant, 'id'>
+export type CombatantInput = Omit<SavedCombatant, 'id' | 'owner' | 'isOwner'>
+
+export class CombatantHealthConflict extends Error {
+  constructor() {
+    super('A redução da vida máxima excederia o limite de vida adicional em combate.')
+  }
+}
 
 async function token() {
   const user = firebaseAuth().currentUser
@@ -27,7 +33,9 @@ export const combatantsService = {
     return read(await api.post('/combatants', input, await token()))
   },
   async update(id: number, input: CombatantInput): Promise<SavedCombatant> {
-    return read(await api.put(`/combatants/${id}`, input, await token()))
+    const response = await api.put(`/combatants/${id}`, input, await token())
+    if (response.status === 409) throw new CombatantHealthConflict()
+    return read(response)
   },
   async remove(id: number): Promise<void> {
     const response = await api.delete(`/combatants/${id}`, await token())
